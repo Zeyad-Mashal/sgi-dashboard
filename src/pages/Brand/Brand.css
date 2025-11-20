@@ -1,0 +1,98 @@
+.brand {
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.brand_top {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1600px;
+}
+.brand_top > input {
+  width: 500px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  border-radius: 10px;
+  outline: none;
+}
+.brand_top > button {
+  width: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 20px;
+  padding: 10px;
+  background-color: rgba(238, 221, 55, 1);
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.brand_list {
+  width: 100%;
+  max-width: 1600px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+.brand_item {
+  width: 250px;
+  background-color: white;
+  box-shadow: 1px 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  border-radius: 16px;
+}
+.brand_item > .brand_img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.brand_item > h2 {
+  font-size: 20px;
+}
+.brand_btns {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.brand_btns > button {
+  width: 100px;
+  padding: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.brand_btns > button:first-child {
+  border: 1px solid rgba(212, 24, 61, 1);
+  color: rgba(212, 24, 61, 1);
+}
+@media screen and (min-width: 1600px) {
+  .brand_item {
+    width: 300px;
+  }
+}

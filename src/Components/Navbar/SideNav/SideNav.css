@@ -1,0 +1,84 @@
+.sidenav {
+  width: 200px;
+  /* box-shadow: 1px 5px 10px rgba(0, 0, 0, 0.3); */
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  height: 100vh;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-direction: column;
+  position: relative;
+}
+.sidenav_container {
+  width: 100%;
+  padding: 10px;
+}
+.sidenav_container > img {
+  margin-top: 1rem;
+}
+.menu,
+.general {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 3rem;
+}
+.menu > h3,
+.general > h3 {
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 0.9rem;
+}
+.menu > ul,
+.general > ul {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
+  padding-left: 10px;
+}
+.menu > ul > li,
+.general > ul > li {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+.menu > ul > li:hover {
+  background-color: rgba(81, 155, 209, 0.07);
+  padding: 10px;
+  border-radius: 16px;
+}
+.menu > ul > li a,
+.general > ul > li a {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+.Logout {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+.Logout > h3 {
+  color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  bottom: 20px;
+  left: 10px;
+  gap: 10px;
+  cursor: pointer;
+}

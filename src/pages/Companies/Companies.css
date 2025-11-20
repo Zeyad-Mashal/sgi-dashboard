@@ -1,0 +1,115 @@
+.companies {
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.companies_top {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1600px;
+}
+.companies_top > input {
+  width: 500px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  border-radius: 10px;
+  outline: none;
+}
+.companies_top > button {
+  width: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 20px;
+  padding: 10px;
+  background-color: rgba(238, 221, 55, 1);
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.companies_table {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  border-radius: 16px 0 0 0;
+  background-color: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+}
+
+.companies_table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: "Poppins", sans-serif;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
+}
+
+/* Header */
+.companies_table table thead tr {
+  background: #f5f7fb;
+}
+
+.companies_table table th {
+  padding: 14px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-align: left;
+  border-bottom: 1px solid #e3e3e3;
+}
+
+/* Body rows */
+.companies_table table td {
+  padding: 14px 18px;
+  font-size: 14px;
+  color: #444;
+  border-bottom: 1px solid #f0f0f0;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+.companies_table table td img {
+  width: 40px;
+}
+/* Hover */
+.companies_table table tbody tr:hover {
+  background: #e7f1ff;
+  transition: 0.25s ease;
+}
+
+/* Actions column */
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions .delete_icon {
+  color: #e63946;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.actions .delete_icon:hover {
+  transform: scale(1.15);
+}
+
+.actions .edit_icon {
+  color: #1d7af3;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.actions .edit_icon:hover {
+  transform: scale(1.15);
+}
