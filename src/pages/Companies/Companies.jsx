@@ -1,9 +1,20 @@
 import React from "react";
 import "./Companies.css";
+import { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa6";
 import { RiEditLine } from "react-icons/ri";
 import { RiDeleteBin6Line } from "react-icons/ri";
+import CompanyApi from "../../API/Company/CompanyApi";
 const Companies = () => {
+  useEffect(() => {
+    getAllCompanies();
+  }, []);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [allCompanies, setAllCompanies] = useState([]);
+  const getAllCompanies = () => {
+    CompanyApi(setAllCompanies, setError, setLoading);
+  };
   return (
     <div className="companies">
       <div className="companies_top">
@@ -24,87 +35,29 @@ const Companies = () => {
               <th>Action</th>
             </tr>
           </thead>
-
           <tbody>
-            <tr>
-              <td>Tech style group</td>
-              <td>022-6638999</td>
-              <td>contact@techstyle.com</td>
-              <td>Tax-2024-00</td>
-              <td>License-2024</td>
-              <td className="actions">
-                <RiDeleteBin6Line className="delete_icon" />
-                <RiEditLine className="edit_icon" />
-              </td>
-            </tr>
-
-            <tr>
-              <td>Tech style group</td>
-              <td>022-6638999</td>
-              <td>contact@techstyle.com</td>
-              <td>Tax-2024-00</td>
-              <td>License-2024</td>
-              <td className="actions">
-                <RiDeleteBin6Line className="delete_icon" />
-                <RiEditLine className="edit_icon" />
-              </td>
-            </tr>
-
-            <tr>
-              <td>Tech style group</td>
-              <td>022-6638999</td>
-              <td>contact@techstyle.com</td>
-              <td>Tax-2024-00</td>
-              <td>License-2024</td>
-              <td className="actions">
-                <RiDeleteBin6Line className="delete_icon" />
-                <RiEditLine className="edit_icon" />
-              </td>
-            </tr>
-            <tr>
-              <td>Tech style group</td>
-              <td>022-6638999</td>
-              <td>contact@techstyle.com</td>
-              <td>Tax-2024-00</td>
-              <td>License-2024</td>
-              <td className="actions">
-                <RiDeleteBin6Line className="delete_icon" />
-                <RiEditLine className="edit_icon" />
-              </td>
-            </tr>
-            <tr>
-              <td>Tech style group</td>
-              <td>022-6638999</td>
-              <td>contact@techstyle.com</td>
-              <td>Tax-2024-00</td>
-              <td>License-2024</td>
-              <td className="actions">
-                <RiDeleteBin6Line className="delete_icon" />
-                <RiEditLine className="edit_icon" />
-              </td>
-            </tr>
-            <tr>
-              <td>Tech style group</td>
-              <td>022-6638999</td>
-              <td>contact@techstyle.com</td>
-              <td>Tax-2024-00</td>
-              <td>License-2024</td>
-              <td className="actions">
-                <RiDeleteBin6Line className="delete_icon" />
-                <RiEditLine className="edit_icon" />
-              </td>
-            </tr>
-            <tr>
-              <td>Tech style group</td>
-              <td>022-6638999</td>
-              <td>contact@techstyle.com</td>
-              <td>Tax-2024-00</td>
-              <td>License-2024</td>
-              <td className="actions">
-                <RiDeleteBin6Line className="delete_icon" />
-                <RiEditLine className="edit_icon" />
-              </td>
-            </tr>
+            {loading ? (
+              <div className="loading">
+                <p>Loading Companies in progress...</p>
+                <span class="loader"></span>
+              </div>
+            ) : (
+              allCompanies.map((item) => {
+                return (
+                  <tr key={item._id}>
+                    <td>{item.name.en}</td>
+                    <td>{item.phone}</td>
+                    <td>{item.email}</td>
+                    <td>{item.taxCard}</td>
+                    <td>{item.BusinessLicense}</td>
+                    <td className="actions">
+                      <RiDeleteBin6Line className="delete_icon" />
+                      <RiEditLine className="edit_icon" />
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
