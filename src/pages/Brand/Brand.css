@@ -421,3 +421,15 @@
   align-items: center;
   justify-content: center;
 }
+.delete_modal {
+  background-color: white;
+  z-index: 2;
+  border-radius: 16px;
+  padding: 1rem;
+  width: 500px;
+  height: 120px;
+}
+.delete_modal > h2 {
+  font-size: 1rem;
+  font-weight: bold;
+}

@@ -6,8 +6,6 @@ import {
   Navigate,
 } from "react-router-dom";
 import Home from "./pages/Home";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
 import SideNav from "./Components/Navbar/SideNav/SideNav";
 import TopNav from "./Components/Navbar/TopNav/TopNav";
 import Brand from "./pages/Brand/Brand";
@@ -15,6 +13,7 @@ import Companies from "./pages/Companies/Companies";
 import Request from "./pages/Request/Request";
 import Products from "./pages/Products/Products";
 import Login from "./pages/Login/Login";
+import Tiers from "./pages/Tiers/Tiers";
 
 function Layout() {
   const location = useLocation();
@@ -57,6 +56,11 @@ function Layout() {
             element={
               user_token ? <Products /> : <Navigate to="/login" replace />
             }
+          />
+
+          <Route
+            path="/Tiers"
+            element={user_token ? <Tiers /> : <Navigate to="/login" replace />}
           />
 
           <Route

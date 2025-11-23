@@ -10,6 +10,7 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { MdOutlineContactSupport } from "react-icons/md";
 import { SlLogout } from "react-icons/sl";
 import { Link, Links } from "react-router-dom";
+import { PiTag } from "react-icons/pi";
 
 const SideNav = () => {
   return (
@@ -47,6 +48,12 @@ const SideNav = () => {
               <Link to={"/products"}>
                 <TbCube />
                 Products
+              </Link>
+            </li>
+            <li>
+              <Link to={"/Tiers"}>
+                <PiTag />
+                Price Tiers
               </Link>
             </li>
           </ul>

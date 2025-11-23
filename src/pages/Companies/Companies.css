@@ -245,7 +245,9 @@
 }
 .add_company_container {
   width: 500px;
-  height: auto;
+  height: 100%;
+  max-height: 98vh;
+  overflow-y: auto;
   background-color: #fff;
   border-radius: 16px;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
@@ -310,7 +312,8 @@
   border-radius: 8px;
   outline: none;
 }
-.add_btns {
+.add_btns,
+.delete_btns {
   width: 100%;
   display: flex;
   justify-content: flex-end;
@@ -318,7 +321,8 @@
   gap: 1rem;
   margin-top: 1rem;
 }
-.add_btns > button {
+.add_btns > button,
+.delete_btns > button {
   padding: 8px 16px;
   border: none;
   border-radius: 8px;
@@ -332,4 +336,57 @@
 }
 .add_btns > button:last-child {
   background-color: rgba(238, 221, 55, 1);
+}
+.delete_modal_container {
+  background: #fff;
+  padding: 25px;
+  width: 400px;
+  border-radius: 15px;
+  z-index: 9999;
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+}
+.delete_modal_container > h2 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #e63946;
+}
+.delete_modal_container > p {
+  margin-top: 10px;
+  color: #555;
+}
+.close_delete_icon {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  cursor: pointer;
+  font-size: 28px;
+  color: #444;
+}
+
+.delete_details {
+  background: #f7f7f7;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 15px 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+
+.delete_btns > .delete_company {
+  background: #e63946;
+  color: white;
+}
+
+.delete_company:hover {
+  background: #c9302c;
+}
+.delete_btns > button:first-child {
+  background-color: rgba(255, 255, 255, 1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+.delete_btns > button:last-child {
+  background-color: #e63946;
 }
