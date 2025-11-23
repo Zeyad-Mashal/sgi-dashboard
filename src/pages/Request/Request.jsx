@@ -8,29 +8,40 @@ import { FiPhone } from "react-icons/fi";
 import { HiOutlineMail } from "react-icons/hi";
 import { IoDocumentsOutline } from "react-icons/io5";
 import AllRequest from "../../API/Request/AllRequest";
-
+import ApprovedRequests from "../../API/Request/ApprovedRequests";
+import PendingRequest from "../../API/Request/PendingRequest";
+import RejectedRequest from "../../API/Request/RejectedRequest";
 const Request = () => {
   const [currentFilter, setCurrentFilter] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [allRequests, setAllRequests] = useState([]);
-  if (currentFilter === "all") {
-    useEffect(() => {
-      AllRequest(setAllRequests, setError, setLoading, currentFilter);
-    }, [currentFilter]);
-  } else if (currentFilter === "approved") {
-    useEffect(() => {
-      AllRequest(setAllRequests, setError, setLoading, currentFilter);
-    }, [currentFilter]);
-  } else if (currentFilter === "pending") {
-    useEffect(() => {
-      AllRequest(setAllRequests, setError, setLoading, currentFilter);
-    }, [currentFilter]);
-  } else {
-    useEffect(() => {
-      AllRequest(setAllRequests, setError, setLoading, currentFilter);
-    }, [currentFilter]);
-  }
+  useEffect(() => {
+    getAllRequests();
+  }, []);
+  const getAllRequests = () => {
+    setLoading(true);
+    setAllRequests([]);
+    AllRequest(setAllRequests, setError, setLoading);
+  };
+
+  const getApprovedRequests = () => {
+    setLoading(true);
+    setAllRequests([]);
+    ApprovedRequests(setAllRequests, setError, setLoading);
+  };
+
+  const getPendingRequests = () => {
+    setLoading(true);
+    setAllRequests([]);
+    PendingRequest(setAllRequests, setError, setLoading);
+  };
+
+  const getRejectedRequests = () => {
+    setLoading(true);
+    setAllRequests([]);
+    RejectedRequest(setAllRequests, setError, setLoading);
+  };
 
   return (
     <div className="Request">
@@ -44,28 +55,40 @@ const Request = () => {
       <div className="resquest_container">
         <div className="request_filter">
           <p
-            onClick={() => setCurrentFilter("all")}
+            onClick={() => {
+              getAllRequests();
+              setCurrentFilter("all");
+            }}
             className={currentFilter === "all" ? "active" : ""}
           >
             All
           </p>
 
           <p
-            onClick={() => setCurrentFilter("approved")}
+            onClick={() => {
+              getApprovedRequests();
+              setCurrentFilter("approved");
+            }}
             className={currentFilter === "approved" ? "active" : ""}
           >
             Approved
           </p>
 
           <p
-            onClick={() => setCurrentFilter("pending")}
+            onClick={() => {
+              getPendingRequests();
+              setCurrentFilter("pending");
+            }}
             className={currentFilter === "pending" ? "active" : ""}
           >
             Pending
           </p>
 
           <p
-            onClick={() => setCurrentFilter("rejected")}
+            onClick={() => {
+              getRejectedRequests();
+              setCurrentFilter("rejected");
+            }}
             className={currentFilter === "rejected" ? "active" : ""}
           >
             Rejected

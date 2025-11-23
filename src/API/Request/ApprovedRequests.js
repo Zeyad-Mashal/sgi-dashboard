@@ -1,5 +1,5 @@
-const AllRequest = async (setAllRequests, setError, setLoading) => {
-    const URL = `https://sgi-dy1p.onrender.com/api/v1/user/merchant/get?page=1&type=all`;
+const ApprovedRequests = async (setAllRequests, setError, setLoading) => {
+    const URL = `https://sgi-dy1p.onrender.com/api/v1/user/merchant/get?page=1&type=approved}`;
     setLoading(true)
     const token = localStorage.getItem("SGI_TOKEN")
     try {
@@ -17,6 +17,8 @@ const AllRequest = async (setAllRequests, setError, setLoading) => {
         if (response.ok) {
             setAllRequests(result.merchants)
             setLoading(false)
+
+
         } else {
             if (response.status == 401) {
                 setError(result.message);
@@ -38,4 +40,4 @@ const AllRequest = async (setAllRequests, setError, setLoading) => {
         setLoading(false)
     }
 }
-export default AllRequest;
+export default ApprovedRequests;

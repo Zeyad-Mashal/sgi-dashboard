@@ -1,5 +1,5 @@
-const AllRequest = async (setAllRequests, setError, setLoading) => {
-    const URL = `https://sgi-dy1p.onrender.com/api/v1/user/merchant/get?page=1&type=all`;
+const PendingRequest = async (setAllRequests, setError, setLoading) => {
+    const URL = `https://sgi-dy1p.onrender.com/api/v1/user/merchant/get?page=1&type=pending`;
     setLoading(true)
     const token = localStorage.getItem("SGI_TOKEN")
     try {
@@ -38,4 +38,4 @@ const AllRequest = async (setAllRequests, setError, setLoading) => {
         setLoading(false)
     }
 }
-export default AllRequest;
+export default PendingRequest;
