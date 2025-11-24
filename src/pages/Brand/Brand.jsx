@@ -189,7 +189,12 @@ const Brand = () => {
                   <p className="upload_click">
                     <span>Click to upload</span> or drag and drop
                   </p>
-                  <p className="upload_desc">JPG, JPEG, PNG less than 1MB</p>
+                  <p className="upload_desc">
+                    JPG, JPEG, PNG, WEBP (recommend) less than 200KB
+                  </p>
+                  <p className="upload_desc">
+                    Image width 160px, height 75px : 80px
+                  </p>
                 </div>
               )}
             </label>

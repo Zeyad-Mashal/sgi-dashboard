@@ -11,6 +11,8 @@ import { MdOutlineContactSupport } from "react-icons/md";
 import { SlLogout } from "react-icons/sl";
 import { Link, Links } from "react-router-dom";
 import { PiTag } from "react-icons/pi";
+import { HiOutlineSquares2X2 } from "react-icons/hi2";
+import { FiUsers } from "react-icons/fi";
 
 const SideNav = () => {
   return (
@@ -45,6 +47,12 @@ const SideNav = () => {
               </Link>
             </li>
             <li>
+              <Link to={"/categories"}>
+                <HiOutlineSquares2X2 />
+                Categories
+              </Link>
+            </li>
+            <li>
               <Link to={"/products"}>
                 <TbCube />
                 Products
@@ -56,15 +64,21 @@ const SideNav = () => {
                 Price Tiers
               </Link>
             </li>
+            <li>
+              <Link to={"/traders"}>
+                <FiUsers />
+                Traders
+              </Link>
+            </li>
           </ul>
         </div>
         <div className="general">
           <h3>General</h3>
           <ul>
-            <li>
+            {/* <li>
               <IoSettingsOutline />
               Settings
-            </li>
+            </li> */}
             <li>
               <MdOutlineContactSupport />
               Support

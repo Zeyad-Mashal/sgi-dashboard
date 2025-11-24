@@ -93,6 +93,7 @@ const Companies = () => {
           <thead>
             <tr>
               <th>Company</th>
+              <th>الشركه</th>
               <th>Phone Number</th>
               <th>E-mail</th>
               <th>Tax card</th>
@@ -111,6 +112,7 @@ const Companies = () => {
                 return (
                   <tr key={item._id}>
                     <td>{item.name.en}</td>
+                    <td>{item.name.ar}</td>
                     <td>{item.phone}</td>
                     <td>{item.email}</td>
                     <td>{item.taxCard}</td>

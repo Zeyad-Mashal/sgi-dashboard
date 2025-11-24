@@ -1,0 +1,231 @@
+.traders {
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.traders_top {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1600px;
+}
+.traders_top > input {
+  width: 500px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  border-radius: 10px;
+  outline: none;
+}
+.traders_top > button {
+  width: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 20px;
+  padding: 10px;
+  background-color: rgba(238, 221, 55, 1);
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.traders_table {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  border-radius: 16px 0 0 0;
+  background-color: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+}
+
+.traders_table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: "Poppins", sans-serif;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
+}
+
+/* Header */
+.traders_table table thead tr {
+  background: #f5f7fb;
+}
+
+.traders_table table th {
+  padding: 14px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-align: left;
+  border-bottom: 1px solid #e3e3e3;
+}
+
+/* Body rows */
+.traders_table table td {
+  padding: 14px 18px;
+  font-size: 14px;
+  color: #444;
+  border-bottom: 1px solid #f0f0f0;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+.traders_table table .product_image {
+  padding: 10px;
+  width: 40px;
+  height: 70px;
+}
+.traders_table table .product_image > img {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+}
+/* Hover */
+.traders_table table tbody tr:hover {
+  background: #e7f1ff;
+  transition: 0.25s ease;
+}
+
+/* Actions column */
+.actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.actions .delete_icon {
+  color: #e63946;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.actions .delete_icon:hover {
+  transform: scale(1.15);
+}
+
+.actions .edit_icon {
+  color: #1d7af3;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.actions .edit_icon:hover {
+  transform: scale(1.15);
+}
+.loading {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  gap: 10px;
+  margin: 0 auto;
+}
+.loading p {
+  color: rgba(0, 0, 0, 0.5);
+  animation: loading 5s linear infinite;
+}
+@keyframes loading {
+  0% {
+    color: rgba(0, 0, 0, 0.5);
+    scale: 1.05;
+  }
+  25% {
+    color: rgba(0, 0, 0, 0.2);
+    scale: 1;
+  }
+  50% {
+    color: rgba(0, 0, 0, 0.5);
+    scale: 1.05;
+  }
+  75% {
+    color: rgba(0, 0, 0, 0.2);
+    scale: 1;
+  }
+  100% {
+    color: rgba(0, 0, 0, 0.5);
+    scale: 1.05;
+  }
+}
+.loader {
+  transform: rotateZ(45deg);
+  perspective: 1000px;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  color: #000;
+}
+.loader:before,
+.loader:after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: inherit;
+  height: inherit;
+  border-radius: 50%;
+  transform: rotateX(70deg);
+  animation: 1s spin linear infinite;
+}
+.loader:after {
+  color: rgba(238, 221, 55, 1);
+  transform: rotateY(70deg);
+  animation-delay: 0.4s;
+}
+
+@keyframes rotate {
+  0% {
+    transform: translate(-50%, -50%) rotateZ(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotateZ(360deg);
+  }
+}
+
+@keyframes rotateccw {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+@keyframes spin {
+  0%,
+  100% {
+    box-shadow: 0.2em 0px 0 0px currentcolor;
+  }
+  12% {
+    box-shadow: 0.2em 0.2em 0 0 currentcolor;
+  }
+  25% {
+    box-shadow: 0 0.2em 0 0px currentcolor;
+  }
+  37% {
+    box-shadow: -0.2em 0.2em 0 0 currentcolor;
+  }
+  50% {
+    box-shadow: -0.2em 0 0 0 currentcolor;
+  }
+  62% {
+    box-shadow: -0.2em -0.2em 0 0 currentcolor;
+  }
+  75% {
+    box-shadow: 0px -0.2em 0 0 currentcolor;
+  }
+  87% {
+    box-shadow: 0.2em -0.2em 0 0 currentcolor;
+  }
+}

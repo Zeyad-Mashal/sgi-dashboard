@@ -28,10 +28,6 @@ const Products = () => {
             </tr>
           </thead>
           <tbody>
-            {/* <div className="loading">
-                <p>Loading Products in progress...</p>
-                <span class="loader"></span>
-              </div> */}
             <tr>
               <td className="product_image">
                 <img src={p1d} alt="" />
