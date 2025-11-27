@@ -16,6 +16,10 @@ import Login from "./pages/Login/Login";
 import Tiers from "./pages/Tiers/Tiers";
 import Categories from "./pages/Categories/Categories";
 import Trader from "./pages/Trader/Trader";
+import Coupon from "./pages/Coupon/Coupon";
+import Users from "./pages/Users/Users";
+import PurchaseOrders from "./pages/PurchaseOrders/PurchaseOrders";
+import Orders from "./pages/Orders/Orders";
 
 function Layout() {
   const location = useLocation();
@@ -75,6 +79,28 @@ function Layout() {
           <Route
             path="/traders"
             element={user_token ? <Trader /> : <Navigate to="/login" replace />}
+          />
+
+          <Route
+            path="/coupons"
+            element={user_token ? <Coupon /> : <Navigate to="/login" replace />}
+          />
+
+          <Route
+            path="/users"
+            element={user_token ? <Users /> : <Navigate to="/login" replace />}
+          />
+
+          <Route
+            path="/purchase-orders"
+            element={
+              user_token ? <PurchaseOrders /> : <Navigate to="/login" replace />
+            }
+          />
+
+          <Route
+            path="/orders"
+            element={user_token ? <Orders /> : <Navigate to="/login" replace />}
           />
 
           <Route

@@ -13,6 +13,10 @@ import { Link, Links } from "react-router-dom";
 import { PiTag } from "react-icons/pi";
 import { HiOutlineSquares2X2 } from "react-icons/hi2";
 import { FiUsers } from "react-icons/fi";
+import { RiCoupon3Line } from "react-icons/ri";
+import { FaUserEdit } from "react-icons/fa";
+import { FiShoppingCart } from "react-icons/fi";
+import { RiShoppingBag3Line } from "react-icons/ri";
 
 const SideNav = () => {
   return (
@@ -26,6 +30,12 @@ const SideNav = () => {
               <Link to={"/"}>
                 <LuHouse />
                 Dashboard
+              </Link>
+            </li>
+            <li>
+              <Link to={"/orders"}>
+                <RiShoppingBag3Line />
+                Orders
               </Link>
             </li>
             <li>
@@ -70,21 +80,35 @@ const SideNav = () => {
                 Traders
               </Link>
             </li>
+            <li>
+              <Link to={"/purchase-orders"}>
+                <FiShoppingCart />
+                Purchase Orders
+              </Link>
+            </li>
+            <li>
+              <Link to={"/coupons"}>
+                <RiCoupon3Line />
+                Coupons
+              </Link>
+            </li>
+            <li>
+              <Link to={"/users"}>
+                <FaUserEdit />
+                Users
+              </Link>
+            </li>
           </ul>
         </div>
-        <div className="general">
+        {/* <div className="general">
           <h3>General</h3>
           <ul>
-            {/* <li>
-              <IoSettingsOutline />
-              Settings
-            </li> */}
             <li>
               <MdOutlineContactSupport />
               Support
             </li>
           </ul>
-        </div>
+        </div> */}
         <div className="Logout">
           <h3>
             <SlLogout />
