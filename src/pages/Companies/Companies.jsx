@@ -105,7 +105,7 @@ const Companies = () => {
             {loading ? (
               <div className="loading">
                 <p>Loading Companies in progress...</p>
-                <span class="loader"></span>
+                <span className="loader"></span>
               </div>
             ) : (
               allCompanies.map((item) => {

@@ -1,21 +1,26 @@
-const URL = "https://sgi-dy1p.onrender.com/api/v1/category/getAll";
-const CategoriesApi = async (setAllCategories, setError, setLoading) => {
+const URL = "https://sgi-dy1p.onrender.com/api/v1/coupon/delete/";
+const DeleteCouponAPI = async (setError,
+    setLoading,
+    setOpenDeleteModal,
+    getAllCoupons, id) => {
     setLoading(true)
+    const token = localStorage.getItem("SGI_TOKEN")
     try {
-        const response = await fetch(URL, {
-            method: 'GET',
+        const response = await fetch(`${URL}${id}`, {
+            method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                "x-is-dashboard": true
+                "x-is-dashboard": true,
+                "authorization": `sgiQ${token}`
             },
         });
 
         const result = await response.json();
 
         if (response.ok) {
-            setAllCategories(result.categories)
+            setOpenDeleteModal(false);
             setLoading(false)
-
+            getAllCoupons()
         } else {
             if (response.status == 400) {
                 setError(result.message);
@@ -34,4 +39,4 @@ const CategoriesApi = async (setAllCategories, setError, setLoading) => {
         setLoading(false)
     }
 }
-export default CategoriesApi;
+export default DeleteCouponAPI;

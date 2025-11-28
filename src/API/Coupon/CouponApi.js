@@ -1,19 +1,22 @@
-const URL = "https://sgi-dy1p.onrender.com/api/v1/category/getAll";
-const CategoriesApi = async (setAllCategories, setError, setLoading) => {
+const URL = "https://sgi-dy1p.onrender.com/api/v1/coupon/get";
+const CouponApi = async (setAllCoupons, setError, setLoading) => {
     setLoading(true)
+    const token = localStorage.getItem("SGI_TOKEN")
+
     try {
         const response = await fetch(URL, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                "x-is-dashboard": true
+                "x-is-dashboard": true,
+                "authorization": `sgiQ${token}`
             },
         });
 
         const result = await response.json();
 
         if (response.ok) {
-            setAllCategories(result.categories)
+            setAllCoupons(result.allCoupons)
             setLoading(false)
 
         } else {
@@ -34,4 +37,4 @@ const CategoriesApi = async (setAllCategories, setError, setLoading) => {
         setLoading(false)
     }
 }
-export default CategoriesApi;
+export default CouponApi;

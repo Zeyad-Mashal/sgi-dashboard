@@ -11,6 +11,7 @@ import CompanyApi from "../../API/Company/CompanyApi";
 import AddCategory from "../../API/Categories/AddCategory";
 import EditCategory from "../../API/Categories/EditCategory";
 import DeleteCategory from "../../API/Categories/DeleteCategory";
+import AddSubCategoryApi from "../../API/Categories/AddSubCategoryApi";
 const Categories = () => {
   const [allCategories, setAllCategories] = useState([]);
   const [error, setError] = useState(null);
@@ -104,6 +105,45 @@ const Categories = () => {
     );
   };
 
+  // add sub category function here
+  const [openSubModal, setOpenSubModal] = useState(false);
+  const [subEnName, setSubEnName] = useState("");
+  const [subArName, setSubArName] = useState("");
+
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const handleOpenSubModal = (cat) => {
+    setSelectedCompanyId(cat.company._id);
+    setSelectedCategoryId(cat._id);
+    setOpenSubModal(true);
+  };
+
+  const handleAddSubCategory = () => {
+    const data = {
+      enName: subEnName,
+      arName: subArName,
+    };
+
+    AddSubCategoryApi(
+      data,
+      setError,
+      setLoading,
+      setOpenSubModal,
+      getAllCategories,
+      selectedCompanyId,
+      selectedCategoryId
+    );
+  };
+
+  //get all sub categories here
+  // show sub category modal
+  const [openShowSubModal, setOpenShowSubModal] = useState(false);
+  const [selectedSubCategories, setSelectedSubCategories] = useState([]);
+  const [showCompanyId, setShowCompanyId] = useState("");
+  const [showCategoryId, setShowCategoryId] = useState("");
+  const [showCompanyName, setShowCompanyName] = useState("");
+  const [showCategoryName, setShowCategoryName] = useState("");
+
   return (
     <div className="Categories">
       <div className="Categories_top">
@@ -128,7 +168,7 @@ const Categories = () => {
             {loading ? (
               <div className="loading">
                 <p>Loading Categories in progress...</p>
-                <span class="loader"></span>
+                <span className="loader"></span>
               </div>
             ) : (
               allCategories.map((category) => {
@@ -136,11 +176,33 @@ const Categories = () => {
                   <tr key={category._id}>
                     <td>{category.name.en}</td>
                     <td>{category.name.ar}</td>
-                    <td>{category.company}</td>
-                    <td>{category.hasSubCategories}</td>
+                    <td>{category.company.name.en}</td>
+                    <button
+                      className="show_sub_btn"
+                      onClick={() => {
+                        setSelectedSubCategories(category.subCategories);
+
+                        setShowCompanyId(category.company._id);
+                        setShowCompanyName(category.company.name); // << هنا الاسم
+
+                        setShowCategoryId(category._id);
+                        setShowCategoryName(category.name); // << هنا الاسم
+
+                        setOpenShowSubModal(true);
+                      }}
+                    >
+                      Show SubCategories
+                    </button>
+
                     <td>
-                      <a href="/">Add Sub Category</a>
+                      <button
+                        className="add_sub_btn"
+                        onClick={() => handleOpenSubModal(category)}
+                      >
+                        Add Sub Category
+                      </button>
                     </td>
+
                     <td className="actions">
                       <RiDeleteBin6Line
                         className="delete_icon"
@@ -324,6 +386,118 @@ const Categories = () => {
               </button>
 
               {error && <p className="error">{error}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {openSubModal && (
+        <div className="add_category">
+          <div className="overlay" onClick={() => setOpenSubModal(false)}></div>
+
+          <div className="add_category_container">
+            <IoIosCloseCircleOutline onClick={() => setOpenSubModal(false)} />
+
+            <div className="add_title">
+              <img src={tierImage} alt="" />
+              <div className="add_title_info">
+                <h2>Add Sub Category</h2>
+                <p>Enter the details of the new sub category</p>
+              </div>
+            </div>
+
+            <div className="add_form">
+              <label>
+                <span>SubCategory Name (English)</span>
+                <input
+                  type="text"
+                  placeholder="SubCategory English name..."
+                  value={subEnName}
+                  onChange={(e) => setSubEnName(e.target.value)}
+                />
+              </label>
+
+              <label>
+                <span>SubCategory Name (Arabic)</span>
+                <input
+                  type="text"
+                  placeholder="SubCategory Arabic name..."
+                  value={subArName}
+                  onChange={(e) => setSubArName(e.target.value)}
+                />
+              </label>
+
+              {/* IDs (hidden but stored) */}
+              <input type="hidden" value={selectedCompanyId} />
+              <input type="hidden" value={selectedCategoryId} />
+            </div>
+
+            <div className="add_btns">
+              <button onClick={() => setOpenSubModal(false)}>Cancel</button>
+
+              <button onClick={handleAddSubCategory}>
+                {loading ? "Loading..." : "Add Sub Category"}
+              </button>
+
+              {error && <p className="error">{error}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+      {openShowSubModal && (
+        <div className="add_category">
+          <div
+            className="overlay"
+            onClick={() => setOpenShowSubModal(false)}
+          ></div>
+
+          <div className="add_category_container subcategory_list_container">
+            <IoIosCloseCircleOutline
+              onClick={() => setOpenShowSubModal(false)}
+            />
+
+            <div className="add_title">
+              <img src={tierImage} alt="" />
+              <div className="add_title_info">
+                <h2>Sub Categories</h2>
+                <p>Listing all sub categories for this category</p>
+              </div>
+            </div>
+
+            <div className="Categories_table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>EN Name</th>
+                    <th>AR Name</th>
+                    <th>Company ID</th>
+                    <th>Category ID</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {selectedSubCategories.length > 0 ? (
+                    selectedSubCategories.map((sub) => (
+                      <tr key={sub._id}>
+                        <td>{sub.name.en}</td>
+                        <td>{sub.name.ar}</td>
+                        <td>{showCompanyName.en}</td>
+                        <td>{showCategoryName.en}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: "center" }}>
+                        No SubCategories Yet
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="add_btns">
+              <button onClick={() => setOpenShowSubModal(false)}>Close</button>
             </div>
           </div>
         </div>

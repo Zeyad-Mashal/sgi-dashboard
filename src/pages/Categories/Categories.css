@@ -322,3 +322,25 @@
   border-radius: 8px;
   outline: none;
 }
+.show_sub_btn,
+.add_sub_btn {
+  padding: 8px 14px;
+  background-color: #3e8ed0;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.add_sub_btn {
+  background-color: rgba(238, 221, 55, 1);
+  color: black;
+}
+
+.show_sub_btn:hover {
+  background-color: #2c6ea7;
+}
+.subcategory_list_container {
+  width: 800px;
+  max-height: 80vh;
+}
