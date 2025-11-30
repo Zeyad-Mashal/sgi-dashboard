@@ -341,6 +341,17 @@
   background-color: #2c6ea7;
 }
 .subcategory_list_container {
-  width: 800px;
-  max-height: 80vh;
+  width: 900px;
+  max-height: 90vh; /* يخلي المودال كله ظاهر */
+  height: auto;
+  overflow-y: auto; /* لو المحتوى زاد يحصل Scroll */
+
+  /* علشان يبدأ من فوق مش في النص */
+  align-self: flex-start;
+  margin-top: 20px;
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding-top: 6rem;
 }
