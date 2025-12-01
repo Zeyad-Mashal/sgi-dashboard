@@ -12,6 +12,7 @@ import CouponApi from "../../API/Coupon/CouponApi";
 import AddCoupon from "../../API/Coupon/AddCoupon";
 import EditCoupon from "../../API/Coupon/EditCoupon";
 import DeleteCouponAPI from "../../API/Coupon/DeleteCouponAPI";
+import UpdateCouponStatus from "../../API/Coupon/UpdateCouponStatus";
 const Coupon = () => {
   useEffect(() => {
     getAllCoupons();
@@ -62,7 +63,11 @@ const Coupon = () => {
   // Delete Coupon
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteCoupon, setDeleteCoupon] = useState(null);
-
+  const [couponToggleLoading, setCouponToggleLoading] = useState(false);
+  // toggle coupon
+  const toggleCoupon = () => {
+    UpdateCouponStatus(setError, setLoading, setAllCoupons, selectedCoupon.id);
+  };
   return (
     <div className="Coupons">
       <div className="Coupons_top">
@@ -82,6 +87,32 @@ const Coupon = () => {
             return (
               <div className="coupon_item">
                 <div className="coupon_item_top">
+                  <div className="switch">
+                    <div className="checkbox-wrapper-35">
+                      <input
+                        type="checkbox"
+                        id={`switch-${item._id}`}
+                        className="switch"
+                        checked={!item.disable} // disable === false يعني الكوبون شغال (ON)
+                        onChange={() =>
+                          UpdateCouponStatus(
+                            setError,
+                            setCouponToggleLoading,
+                            getAllCoupons,
+                            item._id
+                          )
+                        }
+                      />
+
+                      <label htmlFor={`switch-${item._id}`}>
+                        <span className="switch-x-text"></span>
+                        <span className="switch-x-toggletext">
+                          <span className="switch-x-unchecked">Off</span>
+                          <span className="switch-x-checked">On</span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
                   <h2>
                     <img src={couponImage} alt="" />
                     {item.coupon}

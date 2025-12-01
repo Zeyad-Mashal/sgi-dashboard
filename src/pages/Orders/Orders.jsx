@@ -6,15 +6,66 @@ import { RiEditLine } from "react-icons/ri";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { FiPhone } from "react-icons/fi";
 import { IoLocationOutline } from "react-icons/io5";
-import p1d from "../../assets/p1d.jpg";
 import { AiOutlineCloseCircle } from "react-icons/ai";
+import AllOrders from "../../API/Orders/AllOrders";
+import GetOrderDetails from "../../API/Orders/GetOrderDetails";
+import updateOrderStatus from "../../API/Orders/updateOrderStatus";
+import { BsPatchQuestion } from "react-icons/bs";
 
 const Orders = () => {
-  const [currentFilter, setCurrentFilter] = useState("all");
+  const [currentFilter, setCurrentFilter] = useState("New");
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  useEffect(() => {
+    getAllOrders();
+  }, [currentFilter]);
+  useEffect(() => {
+    if (selectedOrderId) {
+      getOrderDetailsApi();
+    }
+  }, [selectedOrderId]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [allOrders, setAllOrders] = useState([]);
+  const [orderDetails, setOrderDetails] = useState([]);
   const [showBox, setShowBox] = useState(false);
+
+  const getAllOrders = () => {
+    AllOrders(
+      setAllOrders,
+      setError,
+      setLoading,
+      currentFilter,
+      setCurrentFilter
+    );
+  };
+  const getOrderDetailsApi = () => {
+    GetOrderDetails(setOrderDetails, setError, setLoading, selectedOrderId);
+  };
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [orderToUpdate, setOrderToUpdate] = useState(null);
+  const [modalOptions, setModalOptions] = useState([]);
+  const openStatusModal = (order) => {
+    setOrderToUpdate(order);
+
+    if (order.orderStatus === "New") {
+      setModalOptions(["Processing", "Canceled"]);
+    } else if (order.orderStatus === "Processing") {
+      setModalOptions(["Success", "Canceled"]);
+    }
+
+    setShowStatusModal(true);
+  };
+  const handleUpdateStatus = (newStatus) => {
+    updateOrderStatus(
+      setError,
+      setLoading,
+      setShowStatusModal,
+      getAllOrders,
+      orderToUpdate._id, // ← هنا الـ orderId
+      newStatus // ← هنا الـ orderStatus
+    );
+  };
 
   return (
     <div className="orders">
@@ -28,36 +79,36 @@ const Orders = () => {
         <div className="order_filter">
           <p
             onClick={() => {
-              setCurrentFilter("all");
+              setCurrentFilter("New");
             }}
-            className={currentFilter === "all" ? "active" : ""}
+            className={currentFilter === "New" ? "active" : ""}
           >
-            All (250)
+            New
           </p>
 
           <p
             onClick={() => {
-              setCurrentFilter("completed");
+              setCurrentFilter("Success");
             }}
-            className={currentFilter === "completed" ? "active" : ""}
+            className={currentFilter === "Success" ? "active" : ""}
           >
             Completed
           </p>
 
           <p
             onClick={() => {
-              setCurrentFilter("pending");
+              setCurrentFilter("Processing");
             }}
-            className={currentFilter === "pending" ? "active" : ""}
+            className={currentFilter === "Processing" ? "active" : ""}
           >
             Pending
           </p>
 
           <p
             onClick={() => {
-              setCurrentFilter("canceled");
+              setCurrentFilter("Canceled");
             }}
-            className={currentFilter === "canceled" ? "active" : ""}
+            className={currentFilter === "Canceled" ? "active" : ""}
           >
             Canceled
           </p>
@@ -77,66 +128,57 @@ const Orders = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr onClick={() => setShowBox(true)}>
-                  <td>#CUST001</td>
-                  <td>#99-384</td>
-                  <td>051234567</td>
-                  <td>25</td>
-                  <td>1500 AED</td>
-                  <td className="status">Complete</td>
-                  <td className="actions">
-                    <RiDeleteBin6Line className="delete_icon" />
-                    <RiEditLine className="edit_icon" />
-                  </td>
-                </tr>
-                <tr onClick={() => setShowBox(true)}>
-                  <td>#CUST001</td>
-                  <td>#99-384</td>
-                  <td>051234567</td>
-                  <td>25</td>
-                  <td>1500 AED</td>
-                  <td className="status">Complete</td>
-                  <td className="actions">
-                    <RiDeleteBin6Line className="delete_icon" />
-                    <RiEditLine className="edit_icon" />
-                  </td>
-                </tr>
-                <tr onClick={() => setShowBox(true)}>
-                  <td>#CUST001</td>
-                  <td>#99-384</td>
-                  <td>051234567</td>
-                  <td>25</td>
-                  <td>1500 AED</td>
-                  <td className="status">Complete</td>
-                  <td className="actions">
-                    <RiDeleteBin6Line className="delete_icon" />
-                    <RiEditLine className="edit_icon" />
-                  </td>
-                </tr>
-                <tr onClick={() => setShowBox(true)}>
-                  <td>#CUST001</td>
-                  <td>#99-384</td>
-                  <td>051234567</td>
-                  <td>25</td>
-                  <td>1500 AED</td>
-                  <td className="status">Complete</td>
-                  <td className="actions">
-                    <RiDeleteBin6Line className="delete_icon" />
-                    <RiEditLine className="edit_icon" />
-                  </td>
-                </tr>
-                <tr onClick={() => setShowBox(true)}>
-                  <td>#CUST001</td>
-                  <td>#99-384</td>
-                  <td>051234567</td>
-                  <td>25</td>
-                  <td>1500 AED</td>
-                  <td className="status">Complete</td>
-                  <td className="actions">
-                    <RiDeleteBin6Line className="delete_icon" />
-                    <RiEditLine className="edit_icon" />
-                  </td>
-                </tr>
+                {loading ? (
+                  <div className="loading">
+                    <p>Loading Orders in progress...</p>
+                    <span className="loader"></span>
+                  </div>
+                ) : allOrders.length <= 0 ? (
+                  <p className="emptyOrder">
+                    <BsPatchQuestion />
+                    Sorry..No Orders Yet.
+                  </p>
+                ) : (
+                  allOrders.map((item) => {
+                    return (
+                      <tr
+                        onClick={() => {
+                          setSelectedOrderId(item._id);
+                          setShowBox(true);
+                        }}
+                        key={item._id}
+                      >
+                        <td>{item._id}</td>
+                        <td>
+                          {item.cartItems.map((ci) => (
+                            <p key={ci._id}>{ci.sku}</p>
+                          ))}
+                        </td>
+                        <td>{item.userPhone}</td>
+                        <td>
+                          {item.cartItems.map((ci) => (
+                            <p key={ci._id}>{ci.quantity}</p>
+                          ))}
+                        </td>
+                        <td>{item.totalAmount} AED</td>
+                        <td
+                          className={`status ${item.orderStatus.toLowerCase()}`}
+                        >
+                          {item.orderStatus}
+                        </td>
+                        <td className="actions">
+                          <RiEditLine
+                            className="edit_icon"
+                            onClick={(e) => {
+                              e.stopPropagation(); // عشان ما يفتحش الـ details box
+                              openStatusModal(item);
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -145,60 +187,75 @@ const Orders = () => {
             <h2>Order Details</h2>
             <div className="order_cotent">
               <div className="order_title">
-                <h3>User name</h3>
-                <p>contact@techstyle.com</p>
+                <h3>{orderDetails?.userName}</h3>
+                <p>{orderDetails?.userPhone}</p>
               </div>
               <div className="delivery_info">
                 <h3>Delivery Information</h3>
                 <p>
-                  <FiPhone /> +971 51234567
+                  <FiPhone /> {orderDetails?.userPhone}
                 </p>
                 <p>
                   <IoLocationOutline />
-                  1234, Techstyle Avenue, Dubai, UAE
+                  {orderDetails?.street}, {orderDetails?.neighborhood},{" "}
+                  {orderDetails?.city}
                 </p>
               </div>
               <div className="activity_info">
                 <h3>Activity</h3>
-                <p>Order date - 10:00 AM, 30/11/2025</p>
+                <p>
+                  Order date -{" "}
+                  {new Date(orderDetails?.orderDate).toLocaleString()}
+                </p>
               </div>
               <div className="Order_quantity">
                 <h3>Order Quantity</h3>
                 <div className="order_list">
-                  <div className="order_item">
-                    <img src={p1d} alt="" />
-                    <div className="item_details">
-                      <h3>Product Name</h3>
-                      <p>Quantity: 2</p>
-                      <span>1500 AED</span>
+                  {orderDetails?.cartItems?.map((prod) => (
+                    <div className="order_item" key={prod._id}>
+                      <img src={prod.productId.picUrls[0]} alt="" />
+                      <div className="item_details">
+                        <h3>{prod.name}</h3>
+                        <p>Quantity: {prod.quantity}</p>
+                        <span>{prod.price} AED</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="order_item">
-                    <img src={p1d} alt="" />
-                    <div className="item_details">
-                      <h3>Product Name</h3>
-                      <p>Quantity: 2</p>
-                      <span>1500 AED</span>
-                    </div>
-                  </div>
-                  <div className="order_item">
-                    <img src={p1d} alt="" />
-                    <div className="item_details">
-                      <h3>Product Name</h3>
-                      <p>Quantity: 2</p>
-                      <span>1500 AED</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
               <div className="Payment_Way">
                 <h3>Payment Way</h3>
-                <p>Cash On Delivey</p>
+                <p>{orderDetails?.paymentWay}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
+      {showStatusModal && (
+        <div className="status_modal">
+          <div className="status_modal_box">
+            <h3>Update Order Status</h3>
+            <p>Choose the next status for this order:</p>
+
+            {modalOptions.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => handleUpdateStatus(opt)}
+                className="status_btn"
+              >
+                {loading ? "loading..." : opt}
+              </button>
+            ))}
+
+            <button
+              className="close_btn"
+              onClick={() => setShowStatusModal(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
