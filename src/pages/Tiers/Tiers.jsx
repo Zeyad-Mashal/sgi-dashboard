@@ -78,7 +78,7 @@ const Tiers = () => {
         {loading ? (
           <div className="loading">
             <p>Loading Price Tiers in progress...</p>
-            <span class="loader"></span>
+            <span className="loader"></span>
           </div>
         ) : (
           allTiers.map((tier) => {
