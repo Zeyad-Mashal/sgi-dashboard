@@ -174,9 +174,9 @@ const Categories = () => {
               allCategories.map((category) => {
                 return (
                   <tr key={category._id}>
-                    <td>{category.name.en}</td>
-                    <td>{category.name.ar}</td>
-                    <td>{category.company.name.en}</td>
+                    <td>{category.name?.en}</td>
+                    <td>{category.name?.ar}</td>
+                    <td>{category.company.name?.en}</td>
                     <button
                       className="show_sub_btn"
                       onClick={() => {

@@ -299,7 +299,7 @@
   font-weight: bold;
   font-size: 0.9rem;
 }
-.delete_btn {
+.modal_actions > .delete_btn {
   background: #d00000;
   padding: 10px 15px;
   color: #fff;
