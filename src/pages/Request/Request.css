@@ -149,6 +149,58 @@
   background-color: rgba(0, 166, 62, 0.15);
   color: rgba(0, 166, 62, 1);
 }
+
+/* File Download Items */
+.file_download_item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+}
+
+.file_download_item > svg {
+  font-size: 1.2rem;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.file_download_item > span {
+  flex: 1;
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.download_btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background-color: rgba(40, 144, 212, 0.15);
+  color: #2890d4;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.download_btn:hover:not(:disabled) {
+  background-color: rgba(40, 144, 212, 0.25);
+}
+
+.download_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.download_btn > svg {
+  font-size: 1rem;
+}
 .loading {
   width: 100%;
   display: flex;

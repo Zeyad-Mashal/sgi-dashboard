@@ -1,5 +1,5 @@
 const ApprovedRequests = async (setAllRequests, setError, setLoading) => {
-    const URL = `https://sgi-dy1p.onrender.com/api/v1/user/merchant/get?page=1&type=approved}`;
+    const URL = `https://sgi-dy1p.onrender.com/api/v1/user/merchant/get?page=1&type=approval`;
     setLoading(true)
     const token = localStorage.getItem("SGI_TOKEN")
     try {
