@@ -201,6 +201,525 @@
 .download_btn > svg {
   font-size: 1rem;
 }
+
+/* ===================== APPROVAL MODAL ===================== */
+.approval_modal_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.approval_modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 500px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.approval_modal.success_state {
+  animation: scaleIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.close_approval_icon {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  cursor: pointer;
+  font-size: 28px;
+  color: #666;
+  transition: all 0.3s;
+  z-index: 10;
+}
+
+.close_approval_icon:hover {
+  color: #000;
+  transform: rotate(90deg);
+}
+
+.approval_modal_header {
+  padding: 25px 25px 15px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.approval_modal_header h2 {
+  margin: 0 0 5px 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.approval_modal_header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.approval_modal_body {
+  padding: 25px;
+}
+
+.password_input_group {
+  margin-bottom: 20px;
+}
+
+.password_input_group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.password_input_wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password_input {
+  width: 100%;
+  padding: 12px 45px 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.password_input:focus {
+  border-color: #2890d4;
+  box-shadow: 0 0 0 3px rgba(40, 144, 212, 0.1);
+}
+
+.toggle_password_btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s;
+}
+
+.toggle_password_btn:hover {
+  color: #2890d4;
+}
+
+.toggle_password_btn svg {
+  font-size: 1.3rem;
+}
+
+.password_actions {
+  margin-bottom: 20px;
+}
+
+.generate_password_btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background: rgba(40, 144, 212, 0.1);
+  color: #2890d4;
+  border: 1px solid rgba(40, 144, 212, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.generate_password_btn:hover:not(:disabled) {
+  background: rgba(40, 144, 212, 0.2);
+  transform: translateY(-2px);
+}
+
+.generate_password_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.generate_password_btn svg {
+  font-size: 1.1rem;
+  transition: transform 0.3s;
+}
+
+.generate_password_btn:hover svg {
+  transform: rotate(180deg);
+}
+
+.approval_error_message {
+  background: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  border: 1px solid #fcc;
+}
+
+.password_requirements {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.password_requirements p {
+  margin: 0 0 10px 0;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.password_requirements ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.password_requirements li {
+  margin: 8px 0;
+  color: #666;
+  font-size: 0.85rem;
+  position: relative;
+  padding-left: 25px;
+}
+
+.password_requirements li:before {
+  content: "✗";
+  position: absolute;
+  left: 0;
+  color: #c33;
+  font-weight: bold;
+}
+
+.password_requirements li.valid:before {
+  content: "✓";
+  color: #0a7ef5;
+}
+
+.password_requirements li.valid {
+  color: #0a7ef5;
+}
+
+.approval_modal_footer {
+  padding: 20px 25px 25px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.cancel_approval_btn,
+.confirm_approval_btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.cancel_approval_btn {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.cancel_approval_btn:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.confirm_approval_btn {
+  background: #2890d4;
+  color: white;
+}
+
+.confirm_approval_btn:hover:not(:disabled) {
+  background: #1e7bb8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 144, 212, 0.4);
+}
+
+.confirm_approval_btn:disabled,
+.cancel_approval_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Success Animation */
+.success_animation_container {
+  padding: 50px 25px;
+  text-align: center;
+  animation: fadeInScale 0.5s ease-out;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.success_checkmark {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  position: relative;
+}
+
+.checkmark_svg {
+  width: 100%;
+  height: 100%;
+}
+
+.checkmark_circle {
+  stroke: #0a7ef5;
+  stroke-width: 2;
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-linecap: round;
+  fill: none;
+  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark_check {
+  stroke: #0a7ef5;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards;
+}
+
+@keyframes stroke {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.success_title {
+  margin: 0 0 10px 0;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #0a7ef5;
+  animation: slideUpFade 0.5s ease-out 0.3s both;
+}
+
+.success_message {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+  animation: slideUpFade 0.5s ease-out 0.5s both;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===================== REJECT MODAL STYLES ===================== */
+.reject_modal .approval_modal_header .warning_text {
+  color: #d32f2f;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.reject_warning_box {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 25px;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+.reject_warning_box p {
+  margin: 8px 0;
+  color: #856404;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.reject_warning_box p:first-child {
+  font-weight: bold;
+  color: #d32f2f;
+  font-size: 1rem;
+}
+
+.confirm_reject_btn {
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  font-size: 1.05rem !important;
+  padding: 14px 28px !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3) !important;
+  border: none !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.confirm_reject_btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.confirm_reject_btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.confirm_reject_btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b71c1c 0%, #8b0000 100%) !important;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(211, 47, 47, 0.5) !important;
+}
+
+.confirm_reject_btn:active:not(:disabled) {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.reject_icon {
+  font-size: 1.2rem;
+  font-weight: bold;
+  display: inline-block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.reject_btn_loader {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reject_modal_footer {
+  padding: 25px !important;
+}
+
+.reject_modal_footer .cancel_approval_btn {
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.reject_checkmark .reject_circle {
+  stroke: #d32f2f;
+}
+
+.reject_checkmark .reject_check {
+  stroke: #d32f2f;
+}
+
+.reject_title {
+  color: #d32f2f !important;
+}
+/* ========================================================= */
 .loading {
   width: 100%;
   display: flex;
