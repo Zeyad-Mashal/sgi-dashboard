@@ -18,6 +18,9 @@ import RejectedRequest from "../../API/Request/RejectedRequest";
 import DownloadPDF from "../../API/PO/DownloadPDF";
 import ApproveMerchant from "../../API/Request/ApproveMerchant";
 import RejectMerchant from "../../API/Request/RejectMerchant";
+import AddToTier from "../../API/Request/AddToTier";
+import PriceTier from "../../API/PriceTier/PriceTier";
+import AddTier from "../../API/PriceTier/AddTier";
 
 const Request = () => {
   const [currentFilter, setCurrentFilter] = useState("all");
@@ -26,13 +29,20 @@ const Request = () => {
   const [allRequests, setAllRequests] = useState([]);
   const [downloadingFile, setDownloadingFile] = useState(null);
 
+  // Price Tiers State
+  const [allTiers, setAllTiers] = useState([]);
+  const [tiersLoading, setTiersLoading] = useState(false);
+
   // Approval Modal State
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [merchantToApprove, setMerchantToApprove] = useState(null);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedTierId, setSelectedTierId] = useState("");
   const [approvalLoading, setApprovalLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showEditTier, setShowEditTier] = useState(false);
+  const [tierUpdateLoading, setTierUpdateLoading] = useState(false);
 
   // Reject Modal State
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -40,10 +50,30 @@ const Request = () => {
   const [rejectLoading, setRejectLoading] = useState(false);
   const [showRejectSuccess, setShowRejectSuccess] = useState(false);
 
+  // Edit Tier Modal State (for approved merchants)
+  const [showEditTierModal, setShowEditTierModal] = useState(false);
+  const [merchantToEditTier, setMerchantToEditTier] = useState(null);
+  const [editTierSelectedId, setEditTierSelectedId] = useState("");
+  const [editTierLoading, setEditTierLoading] = useState(false);
+
+  // Add New Tier Modal State
+  const [showAddTierModal, setShowAddTierModal] = useState(false);
+  const [newTierName, setNewTierName] = useState("");
+  const [addTierLoading, setAddTierLoading] = useState(false);
+
   // Fetch requests when filter changes
   useEffect(() => {
     fetchRequestsByFilter();
   }, [currentFilter]);
+
+  // Fetch all price tiers on component mount
+  useEffect(() => {
+    getAllTiers();
+  }, []);
+
+  const getAllTiers = () => {
+    PriceTier(setAllTiers, setError, setTiersLoading);
+  };
 
   const fetchRequestsByFilter = () => {
     setLoading(true);
@@ -158,8 +188,11 @@ const Request = () => {
   const handleApproveClick = (merchant) => {
     setMerchantToApprove(merchant);
     generatePassword(); // Auto-generate password when modal opens
+    setSelectedTierId(merchant.priceTier || ""); // Set existing tier if available
     setShowApprovalModal(true);
     setShowSuccess(false);
+    setShowEditTier(false);
+    getAllTiers(); // Refresh tiers list
   };
 
   // Close approval modal
@@ -168,7 +201,9 @@ const Request = () => {
     setMerchantToApprove(null);
     setPassword("");
     setShowPassword(false);
+    setSelectedTierId("");
     setShowSuccess(false);
+    setShowEditTier(false);
   };
 
   // Open reject modal
@@ -261,6 +296,11 @@ const Request = () => {
 
       // Check if there was an error
       if (!hasError) {
+        // If tier is selected, add merchant to tier
+        if (selectedTierId) {
+          await handleAddToTier(merchantToApprove._id, selectedTierId);
+        }
+
         // Show success message
         setShowSuccess(true);
         setApprovalLoading(false);
@@ -276,6 +316,260 @@ const Request = () => {
     } catch (err) {
       setError("Failed to approve merchant");
       setApprovalLoading(false);
+    }
+  };
+
+  // Handle add merchant to tier
+  const handleAddToTier = async (merchantId, tierId) => {
+    if (!merchantId || !tierId) return;
+
+    setTierUpdateLoading(true);
+    let hasError = false;
+
+    const setTierError = (message) => {
+      if (message) {
+        hasError = true;
+        setError(message);
+      }
+    };
+
+    try {
+      await AddToTier(setTierError, setTierUpdateLoading, merchantId, tierId);
+    } catch (err) {
+      setError("Failed to add merchant to price tier");
+      hasError = true;
+    } finally {
+      setTierUpdateLoading(false);
+    }
+  };
+
+  // Handle update price tier for approved merchant
+  const handleUpdateTier = async () => {
+    if (!selectedTierId || !merchantToApprove) {
+      setError("Please select a price tier");
+      return;
+    }
+
+    setTierUpdateLoading(true);
+    setError(null);
+
+    let hasError = false;
+
+    const setTierError = (message) => {
+      if (message) {
+        hasError = true;
+        setError(message);
+      }
+    };
+
+    try {
+      await AddToTier(
+        setTierError,
+        setTierUpdateLoading,
+        merchantToApprove._id,
+        selectedTierId
+      );
+
+      if (!hasError) {
+        setShowEditTier(false);
+        setShowSuccess(true);
+        fetchRequestsByFilter(); // Refresh the list
+
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          closeApprovalModal();
+        }, 2000);
+      } else {
+        setTierUpdateLoading(false);
+      }
+    } catch (err) {
+      setError("Failed to update price tier");
+      setTierUpdateLoading(false);
+    }
+  };
+
+  // Open edit tier modal for approved merchant
+  const handleEditTierClick = (merchant) => {
+    setMerchantToEditTier(merchant);
+    setEditTierSelectedId(merchant.priceTier || "");
+    setShowEditTierModal(true);
+    setError(null);
+    getAllTiers();
+  };
+
+  // Close edit tier modal
+  const closeEditTierModal = () => {
+    setShowEditTierModal(false);
+    setMerchantToEditTier(null);
+    setEditTierSelectedId("");
+  };
+
+  // Handle update tier for approved merchant (from approved section)
+  const handleUpdateMerchantTier = async () => {
+    if (!merchantToEditTier) return;
+
+    if (!editTierSelectedId) {
+      setError(
+        "Please select a tier or use 'Remove Tier' to remove the current tier"
+      );
+      return;
+    }
+
+    setEditTierLoading(true);
+    setError(null);
+
+    let hasError = false;
+
+    const setTierError = (message) => {
+      if (message) {
+        hasError = true;
+        setError(message);
+      }
+    };
+
+    try {
+      await AddToTier(
+        setTierError,
+        setEditTierLoading,
+        merchantToEditTier._id,
+        editTierSelectedId
+      );
+
+      if (!hasError) {
+        closeEditTierModal();
+        fetchRequestsByFilter(); // Refresh the list
+      } else {
+        setEditTierLoading(false);
+      }
+    } catch (err) {
+      setError("Failed to update price tier");
+      setEditTierLoading(false);
+    }
+  };
+
+  // Handle remove tier (set to null)
+  const handleRemoveTier = async () => {
+    if (!merchantToEditTier) return;
+
+    if (
+      !window.confirm(
+        "Are you sure you want to remove the price tier from this merchant?"
+      )
+    ) {
+      return;
+    }
+
+    setEditTierLoading(true);
+    setError(null);
+
+    // Set selected tier to empty to represent "no tier"
+    setEditTierSelectedId("");
+
+    // Note: The API might need to support null/empty tierId
+    // If it doesn't work, we may need a different endpoint
+    let hasError = false;
+
+    const setTierError = (message) => {
+      if (message && !message.includes("null")) {
+        // Ignore errors about null if API doesn't support it
+        hasError = true;
+        setError(message);
+      }
+    };
+
+    try {
+      // Try with "null" as string first, then empty string
+      await AddToTier(
+        setTierError,
+        setEditTierLoading,
+        merchantToEditTier._id,
+        "null" // Try "null" as string
+      );
+
+      if (!hasError) {
+        closeEditTierModal();
+        fetchRequestsByFilter();
+      } else {
+        // If "null" doesn't work, try empty string
+        try {
+          await AddToTier(
+            setTierError,
+            setEditTierLoading,
+            merchantToEditTier._id,
+            "" // Try empty string
+          );
+          if (!hasError) {
+            closeEditTierModal();
+            fetchRequestsByFilter();
+          } else {
+            setEditTierLoading(false);
+            setError(
+              "API may not support removing tier. Please contact support."
+            );
+          }
+        } catch (err) {
+          setError(
+            "Failed to remove price tier. API may not support this operation."
+          );
+          setEditTierLoading(false);
+        }
+      }
+    } catch (err) {
+      setError("Failed to remove price tier");
+      setEditTierLoading(false);
+    }
+  };
+
+  // Handle add new tier
+  const handleAddNewTier = async () => {
+    if (!newTierName.trim()) {
+      setError("Please enter a tier name");
+      return;
+    }
+
+    setAddTierLoading(true);
+    setError(null);
+
+    const data = {
+      name: newTierName.trim(),
+    };
+
+    let hasError = false;
+    let newTierId = null;
+
+    const setTierError = (message) => {
+      if (message) {
+        hasError = true;
+        setError(message);
+      }
+    };
+
+    const closeModal = () => {
+      setShowAddTierModal(false);
+    };
+
+    try {
+      // AddTier API will refresh tiers list automatically
+      await AddTier(
+        data,
+        setTierError,
+        setAddTierLoading,
+        closeModal,
+        getAllTiers
+      );
+
+      if (!hasError) {
+        setNewTierName("");
+        // Refresh tiers and auto-select the newly created tier if in edit mode
+        getAllTiers();
+        // If we're in edit tier modal, we might want to auto-select the new tier
+        // But we don't have the new tier ID, so we'll just refresh the list
+      } else {
+        setAddTierLoading(false);
+      }
+    } catch (err) {
+      setError("Failed to add new tier");
+      setAddTierLoading(false);
     }
   };
 
@@ -454,9 +748,17 @@ const Request = () => {
                     </>
                   )}
                   {item.approval && (
-                    <p style={{ color: "green", fontWeight: "bold" }}>
-                      Approved
-                    </p>
+                    <>
+                      <p style={{ color: "green", fontWeight: "bold" }}>
+                        Approved
+                      </p>
+                      <button
+                        className="edit_tier_btn_small"
+                        onClick={() => handleEditTierClick(item)}
+                      >
+                        Edit Tier
+                      </button>
+                    </>
                   )}
                   {item.rejected && (
                     <p style={{ color: "red", fontWeight: "bold" }}>Rejected</p>
@@ -543,6 +845,30 @@ const Request = () => {
                       </li>
                     </ul>
                   </div>
+
+                  {/* Price Tier Selection */}
+                  <div className="tier_selection_group">
+                    <label htmlFor="price_tier_select">
+                      Price Tier (Optional)
+                    </label>
+                    <select
+                      id="price_tier_select"
+                      value={selectedTierId}
+                      onChange={(e) => setSelectedTierId(e.target.value)}
+                      className="tier_select"
+                      disabled={approvalLoading || tiersLoading}
+                    >
+                      <option value="">Select a price tier</option>
+                      {allTiers.map((tier) => (
+                        <option key={tier._id} value={tier._id}>
+                          {tier.name}
+                        </option>
+                      ))}
+                    </select>
+                    {tiersLoading && (
+                      <p className="tier_loading_text">Loading tiers...</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="approval_modal_footer">
@@ -561,6 +887,60 @@ const Request = () => {
                     }
                   >
                     {approvalLoading ? "Approving..." : "Approve Merchant"}
+                  </button>
+                </div>
+              </>
+            ) : showEditTier ? (
+              <>
+                <div className="approval_modal_header">
+                  <h2>Update Price Tier</h2>
+                  <p>Update price tier for {merchantToApprove.name}</p>
+                </div>
+
+                <div className="approval_modal_body">
+                  <div className="tier_selection_group">
+                    <label htmlFor="edit_price_tier_select">Price Tier</label>
+                    <select
+                      id="edit_price_tier_select"
+                      value={selectedTierId}
+                      onChange={(e) => setSelectedTierId(e.target.value)}
+                      className="tier_select"
+                      disabled={tierUpdateLoading || tiersLoading}
+                    >
+                      <option value="">Select a price tier</option>
+                      {allTiers.map((tier) => (
+                        <option key={tier._id} value={tier._id}>
+                          {tier.name}
+                        </option>
+                      ))}
+                    </select>
+                    {tiersLoading && (
+                      <p className="tier_loading_text">Loading tiers...</p>
+                    )}
+                  </div>
+
+                  {error && (
+                    <div className="approval_error_message">{error}</div>
+                  )}
+                </div>
+
+                <div className="approval_modal_footer">
+                  <button
+                    className="cancel_approval_btn"
+                    onClick={() => {
+                      setShowEditTier(false);
+                      setError(null);
+                    }}
+                    disabled={tierUpdateLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="confirm_approval_btn"
+                    onClick={handleUpdateTier}
+                    disabled={tierUpdateLoading || !selectedTierId}
+                  >
+                    {tierUpdateLoading ? "Updating..." : "Update Tier"}
                   </button>
                 </div>
               </>
@@ -590,6 +970,17 @@ const Request = () => {
                 <p className="success_message">
                   {merchantToApprove.name} has been successfully approved.
                 </p>
+                <button
+                  className="edit_tier_btn"
+                  onClick={() => {
+                    setShowEditTier(true);
+                    setShowSuccess(false);
+                    setSelectedTierId(merchantToApprove.priceTier || "");
+                    getAllTiers();
+                  }}
+                >
+                  Edit Price Tier
+                </button>
               </div>
             )}
           </div>
@@ -696,6 +1087,143 @@ const Request = () => {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Tier Modal for Approved Merchants */}
+      {showEditTierModal && merchantToEditTier && (
+        <div className="approval_modal_overlay">
+          <div className="approval_modal">
+            <AiOutlineCloseCircle
+              className="close_approval_icon"
+              onClick={closeEditTierModal}
+            />
+
+            <div className="approval_modal_header">
+              <h2>Edit Price Tier</h2>
+              <p>Update price tier for {merchantToEditTier.name}</p>
+            </div>
+
+            <div className="approval_modal_body">
+              <div className="tier_selection_group">
+                <label htmlFor="edit_merchant_tier_select">Price Tier</label>
+                <div className="tier_select_wrapper">
+                  <select
+                    id="edit_merchant_tier_select"
+                    value={editTierSelectedId}
+                    onChange={(e) => setEditTierSelectedId(e.target.value)}
+                    className="tier_select"
+                    disabled={editTierLoading || tiersLoading}
+                  >
+                    <option value="">No Tier (None)</option>
+                    {allTiers.map((tier) => (
+                      <option key={tier._id} value={tier._id}>
+                        {tier.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="add_tier_btn_small"
+                    onClick={() => {
+                      setShowAddTierModal(true);
+                    }}
+                    disabled={editTierLoading}
+                  >
+                    <FaPlus /> New Tier
+                  </button>
+                </div>
+                {tiersLoading && (
+                  <p className="tier_loading_text">Loading tiers...</p>
+                )}
+              </div>
+
+              {error && <div className="approval_error_message">{error}</div>}
+            </div>
+
+            <div className="approval_modal_footer">
+              <button
+                className="cancel_approval_btn"
+                onClick={closeEditTierModal}
+                disabled={editTierLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="remove_tier_btn"
+                onClick={handleRemoveTier}
+                disabled={editTierLoading || !editTierSelectedId}
+              >
+                Remove Tier
+              </button>
+              <button
+                className="confirm_approval_btn"
+                onClick={handleUpdateMerchantTier}
+                disabled={editTierLoading || !editTierSelectedId}
+              >
+                {editTierLoading ? "Updating..." : "Update Tier"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Tier Modal */}
+      {showAddTierModal && (
+        <div className="approval_modal_overlay">
+          <div className="approval_modal">
+            <AiOutlineCloseCircle
+              className="close_approval_icon"
+              onClick={() => {
+                setShowAddTierModal(false);
+                setNewTierName("");
+                setError(null);
+              }}
+            />
+
+            <div className="approval_modal_header">
+              <h2>Add New Price Tier</h2>
+              <p>Create a new price tier</p>
+            </div>
+
+            <div className="approval_modal_body">
+              <div className="password_input_group">
+                <label htmlFor="new_tier_name">Tier Name</label>
+                <input
+                  id="new_tier_name"
+                  type="text"
+                  value={newTierName}
+                  onChange={(e) => setNewTierName(e.target.value)}
+                  placeholder="Enter tier name"
+                  className="password_input"
+                  disabled={addTierLoading}
+                />
+              </div>
+
+              {error && <div className="approval_error_message">{error}</div>}
+            </div>
+
+            <div className="approval_modal_footer">
+              <button
+                className="cancel_approval_btn"
+                onClick={() => {
+                  setShowAddTierModal(false);
+                  setNewTierName("");
+                  setError(null);
+                }}
+                disabled={addTierLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="confirm_approval_btn"
+                onClick={handleAddNewTier}
+                disabled={addTierLoading || !newTierName.trim()}
+              >
+                {addTierLoading ? "Adding..." : "Add Tier"}
+              </button>
+            </div>
           </div>
         </div>
       )}

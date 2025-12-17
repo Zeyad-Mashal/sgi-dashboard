@@ -719,6 +719,153 @@
 .reject_title {
   color: #d32f2f !important;
 }
+
+/* ===================== TIER SELECTION ===================== */
+.tier_selection_group {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.tier_selection_group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.tier_select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s;
+  background: white;
+  cursor: pointer;
+}
+
+.tier_select:focus {
+  border-color: #2890d4;
+  box-shadow: 0 0 0 3px rgba(40, 144, 212, 0.1);
+}
+
+.tier_select:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.tier_loading_text {
+  margin-top: 8px;
+  color: #666;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.edit_tier_btn {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #2890d4 0%, #1e7bb8 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(40, 144, 212, 0.3);
+}
+
+.edit_tier_btn:hover {
+  background: linear-gradient(135deg, #1e7bb8 0%, #1565a0 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 144, 212, 0.4);
+}
+
+.edit_tier_btn:active {
+  transform: translateY(0);
+}
+
+/* Edit Tier Button in Approved Section */
+.edit_tier_btn_small {
+  padding: 8px 16px;
+  color: black;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(40, 144, 212, 0.3);
+}
+
+.edit_tier_btn_small:hover {
+  background: linear-gradient(135deg, #1e7bb8 0%, #1565a0 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 144, 212, 0.4);
+}
+
+.tier_select_wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.tier_select_wrapper .tier_select {
+  flex: 1;
+}
+
+.add_tier_btn_small {
+  padding: 12px 16px;
+  background: rgba(238, 221, 55, 0.9);
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.add_tier_btn_small:hover:not(:disabled) {
+  background: rgba(238, 221, 55, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(238, 221, 55, 0.4);
+}
+
+.add_tier_btn_small:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.remove_tier_btn {
+  padding: 12px 24px;
+  background: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.remove_tier_btn:hover:not(:disabled) {
+  background: #f57c00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+}
+
+.remove_tier_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 /* ========================================================= */
 .loading {
   width: 100%;
