@@ -20,8 +20,8 @@ const CompanyApi = async (setAllCompanies, setError, setLoading) => {
             if (response.status == 400) {
                 setError(result.message);
                 setLoading(false)
-
-            } else if (response.status == 403) {
+                console.log(result.message);
+            } else if (response.status == 404) {
                 setError(result.message);
                 setLoading(false)
             } else {

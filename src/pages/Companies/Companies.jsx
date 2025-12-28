@@ -11,6 +11,8 @@ import { IoIosCloseCircleOutline } from "react-icons/io";
 import AddCompany from "../../API/Company/AddCompany";
 import UpdateCompany from "../../API/Company/UpdateCompany";
 import DeleteCompnay from "../../API/Company/DeleteCompnay";
+import AddToDraftCompany from "../../API/Company/AddToDraftCompany";
+import GetDraftedCompanies from "../../API/Company/GetDraftedCompanies";
 const Companies = () => {
   useEffect(() => {
     getAllCompanies();
@@ -65,28 +67,84 @@ const Companies = () => {
     );
   };
 
-  // delete company function
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [deleteCompany, setDeleteCompany] = useState(null);
-  const handleDeleteCompany = () => {
-    DeleteCompnay(
+  // draft company function (replaces delete)
+  const [openAddToDraftModal, setOpenAddToDraftModal] = useState(false);
+  const [draftCompany, setDraftCompany] = useState(null);
+  const handleAddToDraft = () => {
+    if (!draftCompany) return;
+    AddToDraftCompany(
       setError,
       setLoading,
-      setOpenDeleteModal,
+      setOpenAddToDraftModal,
       getAllCompanies,
-      deleteCompany._id
+      draftCompany._id
     );
   };
   const getAllCompanies = () => {
     CompanyApi(setAllCompanies, setError, setLoading);
   };
+
+  // Drafted Companies Modal
+  const [openDraftedCompaniesModal, setOpenDraftedCompaniesModal] =
+    useState(false);
+  const [draftedCompanies, setDraftedCompanies] = useState([]);
+  const [draftedCompaniesLoading, setDraftedCompaniesLoading] = useState(false);
+  const [draftedCompaniesError, setDraftedCompaniesError] = useState(null);
+  const [restoringCompanyId, setRestoringCompanyId] = useState(null);
+
+  const getDraftedCompanies = () => {
+    GetDraftedCompanies(
+      setDraftedCompanies,
+      setDraftedCompaniesError,
+      setDraftedCompaniesLoading
+    );
+  };
+
+  const handleOpenDraftedCompanies = () => {
+    setOpenDraftedCompaniesModal(true);
+    getDraftedCompanies();
+  };
+
+  const handleRestoreCompany = async (companyId) => {
+    setRestoringCompanyId(companyId);
+    setDraftedCompaniesError(null);
+    const token = localStorage.getItem("SGI_TOKEN");
+    const URL = `https://sgi-dy1p.onrender.com/api/v1/company/draft/${companyId}`;
+
+    try {
+      const response = await fetch(URL, {
+        method: "PUT",
+        headers: {
+          "x-is-dashboard": true,
+          authorization: `sgiQ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setOpenDraftedCompaniesModal(false);
+        getAllCompanies();
+        setRestoringCompanyId(null);
+      } else {
+        setDraftedCompaniesError(result.message || "Failed to restore company");
+        setRestoringCompanyId(null);
+      }
+    } catch (error) {
+      setDraftedCompaniesError("An error occurred while restoring company");
+      setRestoringCompanyId(null);
+    }
+  };
   return (
     <div className="companies">
       <div className="companies_top">
         <input type="text" placeholder="search" />
-        <button onClick={() => setOpenCompanyModal(true)}>
-          New Company <FaPlus />
-        </button>
+        <div className="companies_top_btns">
+          <button onClick={handleOpenDraftedCompanies}>Draft Companies</button>
+          <button onClick={() => setOpenCompanyModal(true)}>
+            New Company <FaPlus />
+          </button>
+        </div>
       </div>
       <div className="companies_table">
         <table>
@@ -121,8 +179,8 @@ const Companies = () => {
                       <RiDeleteBin6Line
                         className="delete_icon"
                         onClick={() => {
-                          setDeleteCompany(item);
-                          setOpenDeleteModal(true);
+                          setDraftCompany(item);
+                          setOpenAddToDraftModal(true);
                         }}
                       />
 
@@ -339,36 +397,184 @@ const Companies = () => {
           </div>
         </div>
       )}
-      {openDeleteModal && (
+      {openAddToDraftModal && draftCompany && (
         <div className="add_company">
           <div
             className="overlay"
-            onClick={() => setOpenDeleteModal(false)}
+            onClick={() => setOpenAddToDraftModal(false)}
           ></div>
 
-          <div className="delete_modal_container">
+          <div className="delete_modal_container draft_modal_container">
             <IoIosCloseCircleOutline
-              onClick={() => setOpenDeleteModal(false)}
+              onClick={() => setOpenAddToDraftModal(false)}
               className="close_delete_icon"
             />
 
-            <h2>Delete Company</h2>
-            <p>Are you sure you want to delete this company?</p>
+            <div className="draft_warning_icon">⚠️</div>
+            <h2>Move to Draft</h2>
+            <p className="draft_warning_text">
+              Are you sure you want to move{" "}
+              <strong>
+                "
+                {draftCompany.name?.en ||
+                  draftCompany.name?.ar ||
+                  draftCompany.name ||
+                  "this company"}
+                "
+              </strong>{" "}
+              to draft?
+            </p>
+            <p className="draft_info_text">
+              This company will be moved to the draft section and will not be
+              visible in the main company list.
+            </p>
 
             <div className="delete_details">
               <strong>Company Name:</strong>
-              <span>{deleteCompany.name.en}</span>
+              <span>
+                {draftCompany.name?.en ||
+                  draftCompany.name?.ar ||
+                  draftCompany.name ||
+                  "N/A"}
+              </span>
             </div>
 
             <div className="delete_btns">
-              <button onClick={() => setOpenDeleteModal(false)}>Cancel</button>
+              <button onClick={() => setOpenAddToDraftModal(false)}>
+                Cancel
+              </button>
 
-              <button className="delete_company" onClick={handleDeleteCompany}>
-                {loading ? "Deleting..." : "Delete"}
+              <button
+                className="draft_confirm_btn"
+                onClick={handleAddToDraft}
+                disabled={loading}
+              >
+                {loading ? "Moving to Draft..." : "Move to Draft"}
               </button>
             </div>
 
             {error && <p className="error">{error}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Drafted Companies Modal */}
+      {openDraftedCompaniesModal && (
+        <div className="add_company">
+          <div
+            className="overlay"
+            onClick={() => setOpenDraftedCompaniesModal(false)}
+          ></div>
+
+          <div className="drafted_companies_modal">
+            <IoIosCloseCircleOutline
+              className="close_draft_icon"
+              onClick={() => setOpenDraftedCompaniesModal(false)}
+            />
+            <div className="drafted_companies_header">
+              <h2>Drafted Companies</h2>
+              <p>All companies that have been moved to draft</p>
+            </div>
+
+            <div className="drafted_companies_content">
+              {draftedCompaniesLoading ? (
+                <div className="loading">
+                  <p>Loading drafted companies...</p>
+                  <span className="loader"></span>
+                </div>
+              ) : draftedCompaniesError ? (
+                <div className="draft_error_message">
+                  {draftedCompaniesError}
+                </div>
+              ) : draftedCompanies && draftedCompanies.length > 0 ? (
+                <div className="drafted_companies_list">
+                  {draftedCompanies.map((company) => (
+                    <div className="drafted_company_item" key={company._id}>
+                      <div className="drafted_company_info">
+                        <h3>
+                          {company.name?.en ||
+                            company.name?.ar ||
+                            company.name ||
+                            "N/A"}
+                        </h3>
+                        {company.name?.ar && company.name?.en && (
+                          <p className="drafted_company_ar">
+                            {company.name.ar}
+                          </p>
+                        )}
+                        <div className="drafted_company_details">
+                          {company.company_id && (
+                            <p>
+                              <strong>Company ID:</strong> {company.company_id}
+                            </p>
+                          )}
+                          {company.email && (
+                            <p>
+                              <strong>Email:</strong> {company.email}
+                            </p>
+                          )}
+                          {company.phone && (
+                            <p>
+                              <strong>Phone:</strong> {company.phone}
+                            </p>
+                          )}
+                          {company.taxCard && (
+                            <p>
+                              <strong>Tax Card:</strong> {company.taxCard}
+                            </p>
+                          )}
+                          {company.BusinessLicense && (
+                            <p>
+                              <strong>Business License:</strong>{" "}
+                              {company.BusinessLicense}
+                            </p>
+                          )}
+                          {company.createdAt && (
+                            <p>
+                              <strong>Created:</strong>{" "}
+                              {new Date(company.createdAt).toLocaleDateString()}
+                            </p>
+                          )}
+                          {company.updatedAt && (
+                            <p>
+                              <strong>Updated:</strong>{" "}
+                              {new Date(company.updatedAt).toLocaleDateString()}
+                            </p>
+                          )}
+                          {company.isDeleted && (
+                            <p className="draft_status">
+                              <strong>Status:</strong>{" "}
+                              <span className="draft_badge">Drafted</span>
+                            </p>
+                          )}
+                        </div>
+                        <div className="drafted_company_actions">
+                          <button
+                            className="restore_company_btn"
+                            onClick={() => handleRestoreCompany(company._id)}
+                            disabled={restoringCompanyId === company._id}
+                          >
+                            {restoringCompanyId === company._id
+                              ? "Restoring..."
+                              : "Restore"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no_drafted_companies">
+                  <p>No drafted companies found</p>
+                </div>
+              )}
+            </div>
+
+            <div className="drafted_companies_footer">
+              <button onClick={() => setOpenDraftedCompaniesModal(false)}>
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

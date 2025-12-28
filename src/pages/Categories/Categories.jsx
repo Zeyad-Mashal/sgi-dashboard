@@ -11,6 +11,8 @@ import CompanyApi from "../../API/Company/CompanyApi";
 import AddCategory from "../../API/Categories/AddCategory";
 import EditCategory from "../../API/Categories/EditCategory";
 import DeleteCategory from "../../API/Categories/DeleteCategory";
+import AddToDraftCategory from "../../API/Categories/AddToDraftCategory";
+import GetDraftedCategories from "../../API/Categories/GetDraftedCategories";
 import AddSubCategoryApi from "../../API/Categories/AddSubCategoryApi";
 const Categories = () => {
   const [allCategories, setAllCategories] = useState([]);
@@ -86,22 +88,25 @@ const Categories = () => {
     );
   };
 
-  //   delete category function here
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
-  const [deleteCategoryName, setDeleteCategoryName] = useState("");
-  const handleOpenDelete = (cat) => {
-    setDeleteId(cat._id);
-    setOpenDeleteModal(true);
-    setDeleteCategoryName(cat.name.en);
+  //   draft category function (replaces delete)
+  const [openAddToDraftModal, setOpenAddToDraftModal] = useState(false);
+  const [draftCategoryId, setDraftCategoryId] = useState(null);
+  const [draftCategoryName, setDraftCategoryName] = useState("");
+  const handleOpenDraft = (cat) => {
+    setDraftCategoryId(cat._id);
+    setOpenAddToDraftModal(true);
+    setDraftCategoryName(
+      cat.name?.en || cat.name?.ar || cat.name || "this category"
+    );
   };
-  const handleDeleteCategory = () => {
-    DeleteCategory(
-      deleteId,
+  const handleAddToDraft = () => {
+    if (!draftCategoryId) return;
+    AddToDraftCategory(
       setError,
       setLoading,
-      setOpenDeleteModal,
-      getAllCategories
+      setOpenAddToDraftModal,
+      getAllCategories,
+      draftCategoryId
     );
   };
 
@@ -144,13 +149,73 @@ const Categories = () => {
   const [showCompanyName, setShowCompanyName] = useState("");
   const [showCategoryName, setShowCategoryName] = useState("");
 
+  // Drafted Categories Modal
+  const [openDraftedCategoriesModal, setOpenDraftedCategoriesModal] =
+    useState(false);
+  const [draftedCategories, setDraftedCategories] = useState([]);
+  const [draftedCategoriesLoading, setDraftedCategoriesLoading] =
+    useState(false);
+  const [draftedCategoriesError, setDraftedCategoriesError] = useState(null);
+  const [restoringCategoryId, setRestoringCategoryId] = useState(null);
+
+  const getDraftedCategories = () => {
+    GetDraftedCategories(
+      setDraftedCategories,
+      setDraftedCategoriesError,
+      setDraftedCategoriesLoading
+    );
+  };
+
+  const handleOpenDraftedCategories = () => {
+    setOpenDraftedCategoriesModal(true);
+    getDraftedCategories();
+  };
+
+  const handleRestoreCategory = async (categoryId) => {
+    setRestoringCategoryId(categoryId);
+    setDraftedCategoriesError(null);
+    const token = localStorage.getItem("SGI_TOKEN");
+    const URL = `https://sgi-dy1p.onrender.com/api/v1/category/draft/${categoryId}`;
+
+    try {
+      const response = await fetch(URL, {
+        method: "PUT",
+        headers: {
+          "x-is-dashboard": true,
+          authorization: `sgiQ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setOpenDraftedCategoriesModal(false);
+        getAllCategories();
+        setRestoringCategoryId(null);
+      } else {
+        setDraftedCategoriesError(
+          result.message || "Failed to restore category"
+        );
+        setRestoringCategoryId(null);
+      }
+    } catch (error) {
+      setDraftedCategoriesError("An error occurred while restoring category");
+      setRestoringCategoryId(null);
+    }
+  };
+
   return (
     <div className="Categories">
       <div className="Categories_top">
         <input type="text" placeholder="search" />
-        <button onClick={() => setOpenAddModal(true)}>
-          New Category <FaPlus />
-        </button>
+        <div className="Categories_top_btns">
+          <button onClick={handleOpenDraftedCategories}>
+            Draft Categories
+          </button>
+          <button onClick={() => setOpenAddModal(true)}>
+            New Category <FaPlus />
+          </button>
+        </div>
       </div>
       <div className="Categories_table">
         <table>
@@ -206,7 +271,7 @@ const Categories = () => {
                     <td className="actions">
                       <RiDeleteBin6Line
                         className="delete_icon"
-                        onClick={() => handleOpenDelete(category)}
+                        onClick={() => handleOpenDraft(category)}
                       />
 
                       <RiEditLine
@@ -350,39 +415,46 @@ const Categories = () => {
           </div>
         </div>
       )}
-      {openDeleteModal && (
+      {openAddToDraftModal && (
         <div className="add_category">
           <div
             className="overlay"
-            onClick={() => setOpenDeleteModal(false)}
+            onClick={() => setOpenAddToDraftModal(false)}
           ></div>
 
-          <div className="add_category_container delete_category_container">
+          <div className="add_category_container draft_category_container">
             <IoIosCloseCircleOutline
-              onClick={() => setOpenDeleteModal(false)}
+              className="close_draft_icon"
+              onClick={() => setOpenAddToDraftModal(false)}
             />
 
-            <div className="add_title">
-              <img src={tierImage} alt="" />
-              <div className="add_title_info">
-                <h2>Delete Category</h2>
-                <p>Are you sure you want to delete this category?</p>
-              </div>
-            </div>
+            <div className="draft_warning_icon">⚠️</div>
+            <h2>Move to Draft</h2>
+            <p className="draft_warning_text">
+              Are you sure you want to move{" "}
+              <strong>"{draftCategoryName}"</strong> to draft?
+            </p>
+            <p className="draft_info_text">
+              This category will be moved to the draft section and will not be
+              visible in the main category list.
+            </p>
 
-            <div className="delete_warning">
-              <p>
-                You are about to delete category with Name:
-                <br />
-                <strong style={{ color: "red" }}>{deleteCategoryName}</strong>
-              </p>
+            <div className="delete_details">
+              <strong>Category Name:</strong>
+              <span>{draftCategoryName}</span>
             </div>
 
             <div className="add_btns">
-              <button onClick={() => setOpenDeleteModal(false)}>Cancel</button>
+              <button onClick={() => setOpenAddToDraftModal(false)}>
+                Cancel
+              </button>
 
-              <button onClick={handleDeleteCategory}>
-                {loading ? "Deleting..." : "Delete"}
+              <button
+                className="draft_confirm_btn"
+                onClick={handleAddToDraft}
+                disabled={loading}
+              >
+                {loading ? "Moving to Draft..." : "Move to Draft"}
               </button>
 
               {error && <p className="error">{error}</p>}
@@ -498,6 +570,100 @@ const Categories = () => {
 
             <div className="add_btns">
               <button onClick={() => setOpenShowSubModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drafted Categories Modal */}
+      {openDraftedCategoriesModal && (
+        <div className="add_category">
+          <div
+            className="overlay"
+            onClick={() => setOpenDraftedCategoriesModal(false)}
+          ></div>
+
+          <div className="drafted_categories_modal">
+            <IoIosCloseCircleOutline
+              className="close_draft_icon"
+              onClick={() => setOpenDraftedCategoriesModal(false)}
+            />
+            <div className="drafted_categories_header">
+              <h2>Drafted Categories</h2>
+              <p>All categories that have been moved to draft</p>
+            </div>
+
+            <div className="drafted_categories_content">
+              {draftedCategoriesLoading ? (
+                <div className="loading">
+                  <p>Loading drafted categories...</p>
+                  <span className="loader"></span>
+                </div>
+              ) : draftedCategoriesError ? (
+                <div className="draft_error_message">
+                  {draftedCategoriesError}
+                </div>
+              ) : draftedCategories && draftedCategories.length > 0 ? (
+                <div className="drafted_categories_list">
+                  {draftedCategories.map((category) => (
+                    <div className="drafted_category_item" key={category._id}>
+                      <div className="drafted_category_info">
+                        <h3>
+                          {category.name?.en ||
+                            category.name?.ar ||
+                            category.name ||
+                            "N/A"}
+                        </h3>
+                        {category.name?.ar && category.name?.en && (
+                          <p className="drafted_category_ar">
+                            {category.name.ar}
+                          </p>
+                        )}
+                        <div className="drafted_category_details">
+                          {category.company && (
+                            <p>
+                              <strong>Company:</strong>{" "}
+                              {typeof category.company === "object"
+                                ? category.company.name?.en ||
+                                  category.company.name?.ar ||
+                                  category.company.name ||
+                                  "N/A"
+                                : category.company || "N/A"}
+                            </p>
+                          )}
+                          {category.subCategories && (
+                            <p>
+                              <strong>Sub Categories:</strong>{" "}
+                              {category.subCategories.length || 0}
+                            </p>
+                          )}
+                        </div>
+                        <div className="drafted_category_actions">
+                          <button
+                            className="restore_category_btn"
+                            onClick={() => handleRestoreCategory(category._id)}
+                            disabled={restoringCategoryId === category._id}
+                          >
+                            {restoringCategoryId === category._id
+                              ? "Restoring..."
+                              : "Restore"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no_drafted_categories">
+                  <p>No drafted categories found</p>
+                </div>
+              )}
+            </div>
+
+            <div className="drafted_categories_footer">
+              <button onClick={() => setOpenDraftedCategoriesModal(false)}>
+                Close
+              </button>
             </div>
           </div>
         </div>

@@ -20,7 +20,13 @@
   border-radius: 10px;
   outline: none;
 }
-.companies_top > button {
+.companies_top_btns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+.companies_top .companies_top_btns > button {
   width: 150px;
   display: flex;
   justify-content: center;
@@ -390,3 +396,284 @@
 .delete_btns > button:last-child {
   background-color: #e63946;
 }
+
+/* ===================== DRAFT MODAL STYLES ===================== */
+.draft_modal_container {
+  text-align: center;
+  padding: 2rem !important;
+}
+
+.draft_warning_icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.draft_modal_container > h2 {
+  font-size: 1.5rem !important;
+  font-weight: bold !important;
+  color: #333 !important;
+  margin-bottom: 15px !important;
+}
+
+.draft_warning_text {
+  font-size: 1rem;
+  color: #666;
+  margin: 15px 0 10px 0;
+  line-height: 1.6;
+}
+
+.draft_warning_text strong {
+  color: #d32f2f;
+  font-weight: 700;
+}
+
+.draft_info_text {
+  font-size: 0.9rem;
+  color: #999;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.draft_confirm_btn {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+}
+
+.draft_confirm_btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f57c00 0%, #e65100 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+}
+
+.draft_confirm_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===================== DRAFTED COMPANIES MODAL ===================== */
+.drafted_companies_modal {
+  background-color: white;
+  z-index: 2;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 800px;
+  max-width: 90vw;
+  max-height: 90vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.drafted_companies_header {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.drafted_companies_header h2 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.drafted_companies_header p {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0;
+}
+
+.drafted_companies_content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 200px;
+  max-height: 60vh;
+  padding: 10px 0;
+}
+
+.drafted_companies_list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.drafted_company_item {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+.drafted_company_item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.drafted_company_info {
+  width: 100%;
+}
+
+.drafted_company_info h3 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 8px 0;
+  word-wrap: break-word;
+}
+
+.drafted_company_ar {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 15px 0;
+  font-weight: 500;
+}
+
+.drafted_company_details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drafted_company_details p {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.drafted_company_details strong {
+  color: #333;
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.draft_status {
+  margin-top: 8px !important;
+}
+
+.draft_badge {
+  background: #ff9800;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.no_drafted_companies {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.no_drafted_companies p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.drafted_companies_footer {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drafted_companies_footer button {
+  padding: 12px 24px;
+  background: #2890d4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.drafted_companies_footer button:hover {
+  background: #1e7bb8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 144, 212, 0.3);
+}
+
+.draft_error_message {
+  background: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  border: 1px solid #fcc;
+}
+
+.close_draft_icon {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  cursor: pointer;
+  font-size: 28px;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.close_draft_icon:hover {
+  color: #000;
+  transform: rotate(90deg);
+}
+
+.drafted_company_actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.restore_company_btn {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.restore_company_btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.restore_company_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+/* ========================================================= */

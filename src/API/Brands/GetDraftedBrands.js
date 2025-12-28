@@ -1,19 +1,21 @@
-const URL = "https://sgi-dy1p.onrender.com/api/v1/brand/getAll?page=1";
-const AllBrands = async (setAllBrands, setError, setLoading) => {
+const URL = "https://sgi-dy1p.onrender.com/api/v1/brand/getAll?fromDraft=true&page=1";
+const GetDraftedBrands = async (setAllDraftedBrands, setError, setLoading) => {
     setLoading(true)
+    const token = localStorage.getItem("SGI_TOKEN")
     try {
         const response = await fetch(URL, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                "x-is-dashboard": true
+                "x-is-dashboard": true,
+                "authorization": `sgiQ${token}`
             },
         });
 
         const result = await response.json();
 
         if (response.ok) {
-            setAllBrands(result.brands)
+            setAllDraftedBrands(result.brands)
             setLoading(false)
 
         } else {
@@ -36,4 +38,4 @@ const AllBrands = async (setAllBrands, setError, setLoading) => {
         setLoading(false)
     }
 }
-export default AllBrands;
+export default GetDraftedBrands; 

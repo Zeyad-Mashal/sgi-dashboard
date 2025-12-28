@@ -13,6 +13,8 @@ import CompanyApi from "../../API/Company/CompanyApi";
 import AddBrand from "../../API/Brands/AddBrand";
 import UpdateBrandAPI from "../../API/Brands/UpdateBrandAPI";
 import DeleteBrand from "../../API/Brands/DeleteBrand";
+import AddToDraft from "../../API/Brands/AddToDraft";
+import GetDraftedBrands from "../../API/Brands/GetDraftedBrands";
 const Brand = () => {
   useEffect(() => {
     getAllBrands();
@@ -84,18 +86,72 @@ const Brand = () => {
     });
   };
 
-  // delete brand function
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [deleteBrandId, setDeleteBrandId] = useState("");
-  const handleDeleteBrand = () => {
-    DeleteBrand(
+  // draft brand function (replaces delete)
+  const [openAddToDraftModal, setOpenAddToDraftModal] = useState(false);
+  const [draftBrandId, setDraftBrandId] = useState("");
+  const [draftBrandName, setDraftBrandName] = useState("");
+  const handleAddToDraft = () => {
+    AddToDraft(
       setError,
       setLoading,
-      setOpenDeleteModal,
+      setOpenAddToDraftModal,
       getAllBrands,
-      deleteBrandId
+      draftBrandId
     );
   };
+
+  // Drafted Brands Modal
+  const [openDraftedBrandsModal, setOpenDraftedBrandsModal] = useState(false);
+  const [draftedBrands, setDraftedBrands] = useState([]);
+  const [draftedBrandsLoading, setDraftedBrandsLoading] = useState(false);
+  const [draftedBrandsError, setDraftedBrandsError] = useState(null);
+
+  const getDraftedBrands = () => {
+    GetDraftedBrands(
+      setDraftedBrands,
+      setDraftedBrandsError,
+      setDraftedBrandsLoading
+    );
+  };
+
+  const handleOpenDraftedBrands = () => {
+    setOpenDraftedBrandsModal(true);
+    getDraftedBrands();
+  };
+
+  const [restoringBrandId, setRestoringBrandId] = useState(null);
+
+  const handleRestoreBrand = async (brandId) => {
+    setRestoringBrandId(brandId);
+    setDraftedBrandsError(null);
+    const token = localStorage.getItem("SGI_TOKEN");
+    const URL = `https://sgi-dy1p.onrender.com/api/v1/brand/draft/${brandId}`;
+
+    try {
+      const response = await fetch(URL, {
+        method: "PUT",
+        headers: {
+          "x-is-dashboard": true,
+          authorization: `sgiQ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setOpenDraftedBrandsModal(false);
+        getAllBrands();
+        setRestoringBrandId(null);
+      } else {
+        setDraftedBrandsError(result.message || "Failed to restore brand");
+        setRestoringBrandId(null);
+      }
+    } catch (error) {
+      setDraftedBrandsError("An error occurred while restoring brand");
+      setRestoringBrandId(null);
+    }
+  };
+
   // get all brands
   const getAllBrands = () => {
     AllBrands(setAllBrands, setError, setLoading);
@@ -110,15 +166,18 @@ const Brand = () => {
     <div className="brand">
       <div className="brand_top">
         <input type="text" placeholder="search" />
-        <button onClick={() => setOpenBrandModal(true)}>
-          New brand <FaPlus />
-        </button>
+        <div className="brand_top_btns">
+          <button onClick={handleOpenDraftedBrands}>Draft Brands</button>
+          <button onClick={() => setOpenBrandModal(true)}>
+            New brand <FaPlus />
+          </button>
+        </div>
       </div>
       <div className="brand_list">
         {loading ? (
           <div className="loading">
             <p>Loading Brands in progress...</p>
-            <span class="loader"></span>
+            <span className="loader"></span>
           </div>
         ) : (
           allBrands.map((item) => {
@@ -135,12 +194,15 @@ const Brand = () => {
                 <div className="brand_btns">
                   <button
                     onClick={() => {
-                      setDeleteBrandId(item._id);
-                      setOpenDeleteModal(true);
+                      setDraftBrandId(item._id);
+                      setDraftBrandName(
+                        item.name.en || item.name.ar || "this brand"
+                      );
+                      setOpenAddToDraftModal(true);
                     }}
                   >
                     <RiDeleteBin6Line />
-                    Delete
+                    Draft
                   </button>
 
                   <button
@@ -383,21 +445,145 @@ const Brand = () => {
           </div>
         </div>
       )}
-      {openDeleteModal && (
+      {openAddToDraftModal && (
         <div className="add_Brand">
           <div
             className="overlay"
-            onClick={() => setOpenDeleteModal(false)}
+            onClick={() => setOpenAddToDraftModal(false)}
           ></div>
 
-          <div className="delete_modal">
-            <h2>Are you sure you want to delete this brand?</h2>
+          <div className="draft_modal">
+            <IoIosCloseCircleOutline
+              className="close_draft_icon"
+              onClick={() => setOpenAddToDraftModal(false)}
+            />
+            <div className="draft_warning_icon">⚠️</div>
+            <h2>Move to Draft</h2>
+            <p className="draft_warning_text">
+              Are you sure you want to move <strong>"{draftBrandName}"</strong>{" "}
+              to draft?
+            </p>
+            <p className="draft_info_text">
+              This brand will be moved to the draft section and will not be
+              visible in the main brand list.
+            </p>
+
+            {error && <div className="draft_error_message">{error}</div>}
 
             <div className="delete_btns">
-              <button onClick={() => setOpenDeleteModal(false)}>Cancel</button>
+              <button onClick={() => setOpenAddToDraftModal(false)}>
+                Cancel
+              </button>
 
-              <button className="delete_confirm" onClick={handleDeleteBrand}>
-                {loading ? "Deleting..." : "Delete"}
+              <button
+                className="draft_confirm_btn"
+                onClick={handleAddToDraft}
+                disabled={loading}
+              >
+                {loading ? "Moving to Draft..." : "Move to Draft"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drafted Brands Modal */}
+      {openDraftedBrandsModal && (
+        <div className="add_Brand">
+          <div
+            className="overlay"
+            onClick={() => setOpenDraftedBrandsModal(false)}
+          ></div>
+
+          <div className="drafted_brands_modal">
+            <IoIosCloseCircleOutline
+              className="close_draft_icon"
+              onClick={() => setOpenDraftedBrandsModal(false)}
+            />
+            <div className="drafted_brands_header">
+              <h2>Drafted Brands</h2>
+              <p>All brands that have been moved to draft</p>
+            </div>
+
+            <div className="drafted_brands_content">
+              {draftedBrandsLoading ? (
+                <div className="loading">
+                  <p>Loading drafted brands...</p>
+                  <span className="loader"></span>
+                </div>
+              ) : draftedBrandsError ? (
+                <div className="draft_error_message">{draftedBrandsError}</div>
+              ) : draftedBrands && draftedBrands.length > 0 ? (
+                <div className="drafted_brands_list">
+                  {draftedBrands.map((brand) => (
+                    <div className="drafted_brand_item" key={brand._id}>
+                      <div className="drafted_brand_img">
+                        <img
+                          src={brand.logo || brandimg}
+                          alt="brand logo"
+                          onError={(e) => {
+                            e.target.src = brandimg;
+                          }}
+                        />
+                      </div>
+                      <div className="drafted_brand_info">
+                        <h3>
+                          {typeof brand.name === "object"
+                            ? brand.name.en || brand.name.ar || "N/A"
+                            : brand.name || "N/A"}
+                        </h3>
+                        <p>
+                          <strong>Company:</strong>{" "}
+                          {typeof brand.company === "object"
+                            ? brand.company.name?.en ||
+                              brand.company.name?.ar ||
+                              brand.company.name ||
+                              "N/A"
+                            : brand.company || "N/A"}
+                        </p>
+                        {brand.createdAt && (
+                          <p>
+                            <strong>Created:</strong>{" "}
+                            {new Date(brand.createdAt).toLocaleDateString()}
+                          </p>
+                        )}
+                        {brand.updatedAt && (
+                          <p>
+                            <strong>Updated:</strong>{" "}
+                            {new Date(brand.updatedAt).toLocaleDateString()}
+                          </p>
+                        )}
+                        {brand.isDeleted && (
+                          <p className="draft_status">
+                            <strong>Status:</strong>{" "}
+                            <span className="draft_badge">Drafted</span>
+                          </p>
+                        )}
+                        <div className="drafted_brand_actions">
+                          <button
+                            className="restore_brand_btn"
+                            onClick={() => handleRestoreBrand(brand._id)}
+                            disabled={restoringBrandId === brand._id}
+                          >
+                            {restoringBrandId === brand._id
+                              ? "Restoring..."
+                              : "Restore"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no_drafted_brands">
+                  <p>No drafted brands found</p>
+                </div>
+              )}
+            </div>
+
+            <div className="drafted_brands_footer">
+              <button onClick={() => setOpenDraftedBrandsModal(false)}>
+                Close
               </button>
             </div>
           </div>
