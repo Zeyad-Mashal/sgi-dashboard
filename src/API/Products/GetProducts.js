@@ -1,5 +1,5 @@
-const URL = "https://sgi-dy1p.onrender.com/api/v1/GetProducts/get";
-const GetProducts = async (setAllTiers, setError, setLoading) => {
+const URL = "https://sgi-dy1p.onrender.com/api/v1/product/get?page=1";
+const GetProducts = async (setAllProducts, setError, setLoading) => {
     setLoading(true)
     const token = localStorage.getItem("SGI_TOKEN")
 
@@ -9,15 +9,15 @@ const GetProducts = async (setAllTiers, setError, setLoading) => {
             headers: {
                 'Content-Type': 'application/json',
                 "x-is-dashboard": true,
-                "authorization": `sgiQ${token}`
-
+                "authorization": `sgiQ${token}`,
+                // 'accept-language': "en"
             },
         });
 
         const result = await response.json();
 
         if (response.ok) {
-            setAllTiers(result.priceTiers)
+            setAllProducts(result.products)
             setLoading(false)
 
         } else {
@@ -25,9 +25,10 @@ const GetProducts = async (setAllTiers, setError, setLoading) => {
                 setError(result.message);
                 setLoading(false)
 
-            } else if (response.status == 403) {
+            } else if (response.status == 404) {
                 setError(result.message);
                 setLoading(false)
+                console.log(result.message);
             } else {
                 setError(result.message);
                 setLoading(false)

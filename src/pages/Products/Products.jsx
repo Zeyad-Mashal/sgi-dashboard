@@ -13,17 +13,24 @@ import CompanyApi from "../../API/Company/CompanyApi";
 import AllBrands from "../../API/Brands/AllBrands";
 import CategoriesApi from "../../API/Categories/CategoriesApi";
 import AddProduct from "../../API/Products/AddProduct";
-
+import GetProducts from "../../API/Products/GetProducts";
+import UpdateProduct from "../../API/Products/UpdateProduct";
+import DeleteProduct from "../../API/Products/DeleteProduct";
 const Products = () => {
   useEffect(() => {
     getAllTier();
     getAllCompanies();
     getAllBrands();
     getAllCategories();
+    GetProducts(setAllProducts, setError, setLoading);
   }, []);
 
   const [showTable, setShowTable] = useState(true);
   const [AddProductModel, setAddProductModel] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [deleteProduct, setDeleteProduct] = useState(null);
 
   // IMAGES (FILES)
   const [mainImage, setMainImage] = useState(null);
@@ -49,6 +56,7 @@ const Products = () => {
   const [allTiers, setAllTiers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [allProducts, setAllProducts] = useState([]);
 
   const getAllTier = () => {
     PriceTier(setAllTiers, setError, setLoading);
@@ -112,7 +120,84 @@ const Products = () => {
   const [stockQ, setStockQ] = useState("");
   const [stockStatus, setStockStatus] = useState("");
 
-  // SUBMIT PRODUCT
+  // RESET FORM
+  const resetForm = () => {
+    setEnName("");
+    setArName("");
+    setEnDescription("");
+    setArDescription("");
+    setdefaultPrice("");
+    setcode("");
+    setArUses("");
+    setEnUses("");
+    setArFeatures("");
+    setEnFeatures("");
+    setcompany("");
+    setBrand("");
+    setcategories([]);
+    settierPrices([]);
+    setStockQ("");
+    setStockStatus("");
+    setMainImage(null);
+    setGalleryImages([]);
+    setIsEditMode(false);
+    setEditingProductId(null);
+  };
+
+  // POPULATE FORM WITH PRODUCT DATA
+  const populateFormWithProduct = (product) => {
+    setEnName(product?.name?.en || "");
+    setArName(product?.name?.ar || "");
+    setEnDescription(product?.description?.en || "");
+    setArDescription(product?.description?.ar || "");
+    setdefaultPrice(product?.price?.toString() || "");
+    setcode(product?.code || "");
+    setArUses(product?.uses?.ar || "");
+    setEnUses(product?.uses?.en || "");
+    setArFeatures(product?.features?.ar || "");
+    setEnFeatures(product?.features?.en || "");
+    setcompany(product?.company?._id || product?.company || "");
+    setBrand(product?.brand?._id || product?.brand || "");
+
+    // Set categories
+    if (product?.categories && Array.isArray(product.categories)) {
+      const categoryIds = product.categories.map((cat) => cat._id || cat);
+      setcategories(categoryIds);
+    } else {
+      setcategories([]);
+    }
+
+    // Set tier prices if available
+    if (product?.tierPrices && Array.isArray(product.tierPrices)) {
+      settierPrices(product.tierPrices);
+    } else {
+      settierPrices([]);
+    }
+
+    setStockQ(product?.stock?.toString() || "");
+    setStockStatus(product?.stockStatus || "In Stock");
+
+    // Handle images - set existing images as URLs (not files)
+    if (product?.picUrls && product.picUrls.length > 0) {
+      // Store URLs for display, but we'll need to handle file uploads separately
+      setMainImage(null); // Reset to null, user can upload new if needed
+      setGalleryImages([]);
+    } else {
+      setMainImage(null);
+      setGalleryImages([]);
+    }
+  };
+
+  // HANDLE EDIT CLICK
+  const handleEditClick = (product) => {
+    setEditingProductId(product._id);
+    setIsEditMode(true);
+    populateFormWithProduct(product);
+    setAddProductModel(true);
+    setShowTable(false);
+  };
+
+  // SUBMIT PRODUCT (ADD OR UPDATE)
   const handleAddProduct = () => {
     const data = new FormData();
 
@@ -141,8 +226,8 @@ const Products = () => {
     data.append("stockStatus", stockStatus);
 
     // MULTIPLE CATEGORIES
-    categories.forEach((catId, i) => {
-      data.append(`categories[${i}]`, catId);
+    categories.forEach((catId) => {
+      data.append("categories", catId);
     });
 
     // PRICE SEGMENTS (POSTMAN STYLE)
@@ -161,7 +246,24 @@ const Products = () => {
     });
 
     // SEND TO API
-    AddProduct(data, setError, setLoading, setShowTable, setAddProductModel);
+    if (isEditMode && editingProductId) {
+      UpdateProduct(
+        editingProductId,
+        data,
+        setError,
+        setLoading,
+        setAddProductModel,
+        setShowTable,
+        () => {
+          resetForm();
+          // Refresh products list
+          GetProducts(setAllProducts, setError, setLoading);
+        }
+      );
+    } else {
+      AddProduct(data, setError, setLoading, setShowTable, setAddProductModel);
+      resetForm();
+    }
   };
 
   return (
@@ -172,6 +274,7 @@ const Products = () => {
             <input type="text" placeholder="search" />
             <button
               onClick={() => {
+                resetForm();
                 setAddProductModel(true);
                 setShowTable(false);
               }}
@@ -195,20 +298,33 @@ const Products = () => {
               </thead>
 
               <tbody>
-                <tr>
-                  <td className="product_image">
-                    <img src={p1d} alt="" />
-                  </td>
-                  <td>Product name</td>
-                  <td>022-6638999</td>
-                  <td>CLEENNOL</td>
-                  <td>SGI</td>
-                  <td>1500 AED</td>
-                  <td className="actions">
-                    <RiDeleteBin6Line className="delete_icon" />
-                    <RiEditLine className="edit_icon" />
-                  </td>
-                </tr>
+                {allProducts.map((item) => {
+                  return (
+                    <tr key={item._id}>
+                      <td className="product_image">
+                        <img src={item?.picUrls[0]} alt="" />
+                      </td>
+                      <td>{item?.name?.en}</td>
+                      <td>{item?.code}</td>
+                      <td>{item?.categories.map((cat) => cat.name.en)}</td>
+                      <td>{item?.company?.name?.en}</td>
+                      <td>{item?.price} AED</td>
+                      <td className="actions">
+                        <RiDeleteBin6Line
+                          className="delete_icon"
+                          onClick={() => {
+                            setDeleteProduct(item);
+                            setOpenDeleteModal(true);
+                          }}
+                        />
+                        <RiEditLine
+                          className="edit_icon"
+                          onClick={() => handleEditClick(item)}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -222,6 +338,7 @@ const Products = () => {
               onClick={() => {
                 setShowTable(true);
                 setAddProductModel(false);
+                resetForm();
               }}
               className="returnToProducts"
             >
@@ -233,7 +350,7 @@ const Products = () => {
           <div className="add_product_container">
             {/* LEFT SIDE */}
             <div className="add_product_left">
-              <h1>Basic Details</h1>
+              <h1>{isEditMode ? "Edit Product" : "Basic Details"}</h1>
 
               <div className="add_product_left_inputs">
                 <label>
@@ -253,6 +370,18 @@ const Products = () => {
                     placeholder="اسم المنتج"
                     value={arName}
                     onChange={(e) => setArName(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className="add_product_left_inputs">
+                <label>
+                  <span>Barcode Number</span>
+                  <input
+                    type="text"
+                    placeholder="NBENOV500"
+                    value={code}
+                    onChange={(e) => setcode(e.target.value)}
                   />
                 </label>
               </div>
@@ -412,9 +541,15 @@ const Products = () => {
 
               <div className="product_btns">
                 <button onClick={handleAddProduct}>
-                  {loading ? "Publishing ..." : "Publish Product"}
+                  {loading
+                    ? isEditMode
+                      ? "Updating ..."
+                      : "Publishing ..."
+                    : isEditMode
+                    ? "Update Product"
+                    : "Publish Product"}
                 </button>
-                {error}
+                {error && <div className="error_message">{error}</div>}
               </div>
             </div>
 
@@ -428,7 +563,34 @@ const Products = () => {
                   <>
                     <img
                       className="mainImage"
-                      src={URL.createObjectURL(mainImage)}
+                      src={
+                        typeof mainImage === "string"
+                          ? mainImage
+                          : URL.createObjectURL(mainImage)
+                      }
+                      alt="main"
+                    />
+                    <div className="image_actions">
+                      <label className="replace_btn">
+                        <h3>
+                          <GrPowerCycle />
+                          Replace
+                        </h3>
+
+                        <input type="file" onChange={handleMainUpload} hidden />
+                      </label>
+                    </div>
+                  </>
+                ) : isEditMode &&
+                  allProducts.find((p) => p._id === editingProductId)
+                    ?.picUrls?.[0] ? (
+                  <>
+                    <img
+                      className="mainImage"
+                      src={
+                        allProducts.find((p) => p._id === editingProductId)
+                          ?.picUrls[0]
+                      }
                       alt="main"
                     />
                     <div className="image_actions">
@@ -452,8 +614,21 @@ const Products = () => {
 
               {/* GALLERY */}
               <div className="gallery_container">
+                {/* Show existing gallery images in edit mode */}
+                {isEditMode &&
+                  allProducts
+                    .find((p) => p._id === editingProductId)
+                    ?.picUrls?.slice(1)
+                    .map((imgUrl, index) => (
+                      <div className="gallery_item" key={`existing-${index}`}>
+                        <img src={imgUrl} alt="gallery" />
+                        <div className="existing_image_label">Existing</div>
+                      </div>
+                    ))}
+
+                {/* Show new uploaded gallery images */}
                 {galleryImages.map((img, index) => (
-                  <div className="gallery_item" key={index}>
+                  <div className="gallery_item" key={`new-${index}`}>
                     <img src={URL.createObjectURL(img)} alt="gallery" />
 
                     <IoIosCloseCircleOutline
@@ -567,6 +742,74 @@ const Products = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Delete Product Modal */}
+      {openDeleteModal && deleteProduct && (
+        <div className="delete_product_modal">
+          <div
+            className="overlay"
+            onClick={() => setOpenDeleteModal(false)}
+          ></div>
+
+          <div className="delete_product_modal_container">
+            <IoIosCloseCircleOutline
+              className="close_delete_icon"
+              onClick={() => setOpenDeleteModal(false)}
+            />
+
+            <div className="delete_modal_content">
+              <div className="delete_icon_animation">
+                <RiDeleteBin6Line className="delete_icon_large" />
+              </div>
+
+              <h2>Delete Product</h2>
+              <p className="delete_modal_message">
+                Are you sure you want to delete this product?
+              </p>
+
+              <div className="delete_product_info">
+                <p>
+                  Product:{" "}
+                  <strong>
+                    {deleteProduct?.name?.en || deleteProduct?.name || "N/A"}
+                  </strong>
+                </p>
+                {deleteProduct?.code && (
+                  <p>
+                    Code: <strong>{deleteProduct.code}</strong>
+                  </p>
+                )}
+              </div>
+
+              <div className="delete_modal_btns">
+                <button
+                  className="cancel_btn"
+                  onClick={() => setOpenDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="delete_confirm_btn"
+                  onClick={() => {
+                    DeleteProduct(
+                      deleteProduct._id,
+                      setError,
+                      setLoading,
+                      setOpenDeleteModal,
+                      () => GetProducts(setAllProducts, setError, setLoading)
+                    );
+                  }}
+                >
+                  {loading ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+
+              {error && <p className="error_message">{error}</p>}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

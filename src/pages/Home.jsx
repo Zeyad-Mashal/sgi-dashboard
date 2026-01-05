@@ -1,14 +1,30 @@
 import "./Home.css";
 import Kpis from "../API/Kpis/Kpis";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import status1 from "../assets/status.png";
 import status2 from "../assets/status2.png";
+import AllRequest from "../API/Request/AllRequest";
+import GetTraderKpis from "../API/Kpis/GetTraderKpis";
+import GetProducts from "../API/Products/GetProducts";
+import GetProductKpis from "../API/Kpis/GetProductKpis";
+import { IoIosCloseCircleOutline } from "react-icons/io";
 
 export default function Home() {
+  const navigate = useNavigate();
   const [kpi, setKpi] = useState(null);
   const [previousKpi, setPreviousKpi] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [traders, setTraders] = useState([]);
+  const [tradersKpis, setTradersKpis] = useState({});
+  const [tradersLoading, setTradersLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [productsKpis, setProductsKpis] = useState({});
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showProductStatusModal, setShowProductStatusModal] = useState(false);
+  const [selectedProductKpi, setSelectedProductKpi] = useState(null);
 
   // Calculate default dates (last 7 days)
   const getDefaultEndDate = () => new Date().toISOString().split("T")[0];
@@ -52,6 +68,92 @@ export default function Home() {
     fetchData();
   }, [startDate, endDate]);
 
+  // Fetch traders and their KPIs
+  useEffect(() => {
+    const fetchTraders = async () => {
+      setTradersLoading(true);
+
+      await AllRequest(
+        (merchants) => {
+          setTraders(merchants);
+          // Fetch KPIs for each trader
+          merchants.forEach((merchant) => {
+            GetTraderKpis(
+              (kpiData) => {
+                setTradersKpis((prev) => ({
+                  ...prev,
+                  [merchant._id]: kpiData.result || kpiData,
+                }));
+              },
+              (err) => {
+                console.error(
+                  `Error fetching KPI for trader ${merchant._id}:`,
+                  err
+                );
+              },
+              () => {},
+              startDate,
+              endDate,
+              merchant._id
+            );
+          });
+          setTradersLoading(false);
+        },
+        (err) => {
+          console.error("Error fetching traders:", err);
+          setTradersLoading(false);
+        },
+        () => {}
+      );
+    };
+
+    fetchTraders();
+  }, [startDate, endDate]);
+
+  // Fetch products and their KPIs
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setProductsLoading(true);
+
+      await GetProducts(
+        (productsList) => {
+          setProducts(productsList || []);
+          // Fetch KPIs for each product
+          if (productsList && productsList.length > 0) {
+            productsList.forEach((product) => {
+              GetProductKpis(
+                (kpiData) => {
+                  setProductsKpis((prev) => ({
+                    ...prev,
+                    [product._id]: kpiData.result || kpiData,
+                  }));
+                },
+                (err) => {
+                  console.error(
+                    `Error fetching KPI for product ${product._id}:`,
+                    err
+                  );
+                },
+                () => {},
+                startDate,
+                endDate,
+                product._id
+              );
+            });
+          }
+          setProductsLoading(false);
+        },
+        (err) => {
+          console.error("Error fetching products:", err);
+          setProductsLoading(false);
+        },
+        () => {}
+      );
+    };
+
+    fetchProducts();
+  }, [startDate, endDate]);
+
   // Calculate percentage change
   const calculatePercentageChange = (current, previous) => {
     if (!previous || previous === 0) return current > 0 ? 100 : 0;
@@ -74,6 +176,27 @@ export default function Home() {
   const formatCurrency = (num) => {
     if (num === null || num === undefined) return "0";
     return `AED ${num.toLocaleString()}`;
+  };
+
+  // Handle product click to show status
+  const handleProductClick = async (product) => {
+    setSelectedProduct(product);
+    setShowProductStatusModal(true);
+
+    // Fetch KPI for the selected product
+    setSelectedProductKpi(null);
+    await GetProductKpis(
+      (kpiData) => {
+        setSelectedProductKpi(kpiData.result || kpiData);
+      },
+      (err) => {
+        console.error("Error fetching product KPI:", err);
+      },
+      () => {},
+      startDate,
+      endDate,
+      product._id
+    );
   };
 
   return (
@@ -317,6 +440,224 @@ export default function Home() {
 
         {loading && <div className="loading">Loading...</div>}
         {error && <div className="error">Error: {error}</div>}
+
+        {/* Traders Table Section */}
+        <div className="traders_section">
+          <div className="traders_section_header">
+            <h2>Traders Overview</h2>
+            <button
+              className="view_all_btn"
+              onClick={() => navigate("/traders")}
+            >
+              View All
+            </button>
+          </div>
+
+          <div className="traders_table_container">
+            {tradersLoading ? (
+              <div className="loading">Loading Traders...</div>
+            ) : (
+              <table className="traders_overview_table">
+                <thead>
+                  <tr>
+                    <th>Trader Name</th>
+                    <th>Phone</th>
+                    <th>Total Orders</th>
+                    <th>Total Items</th>
+                    <th>Total Revenue</th>
+                    <th>Avg Order Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {traders.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="6"
+                        style={{ textAlign: "center", padding: "20px" }}
+                      >
+                        No traders found
+                      </td>
+                    </tr>
+                  ) : (
+                    traders.map((trader) => {
+                      const traderKpi = tradersKpis[trader._id];
+                      return (
+                        <tr key={trader._id}>
+                          <td>{trader.name || "N/A"}</td>
+                          <td>{trader.phone || "N/A"}</td>
+                          <td>{traderKpi?.totalOrders || 0}</td>
+                          <td>{traderKpi?.totalItemsPurchased || 0}</td>
+                          <td>
+                            {formatCurrency(traderKpi?.totalRevenue || 0)}
+                          </td>
+                          <td>
+                            {formatCurrency(traderKpi?.avgOrderValue || 0)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Products Section */}
+        <div className="traders_section">
+          <div className="traders_section_header">
+            <h2>Products Overview</h2>
+            <button
+              className="view_all_btn"
+              onClick={() => navigate("/products")}
+            >
+              View All
+            </button>
+          </div>
+
+          <div className="traders_table_container">
+            {productsLoading ? (
+              <div className="loading">Loading Products...</div>
+            ) : (
+              <table className="traders_overview_table">
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th>Categories</th>
+                    <th>Total Quantity Sold</th>
+                    <th>Total Revenue</th>
+                    <th>Avg Selling Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        style={{ textAlign: "center", padding: "20px" }}
+                      >
+                        No products found
+                      </td>
+                    </tr>
+                  ) : (
+                    products.map((product) => {
+                      const productKpi = productsKpis[product._id];
+                      return (
+                        <tr
+                          key={product._id}
+                          onClick={() => handleProductClick(product)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <td>{product?.name?.en || product?.name || "N/A"}</td>
+                          <td>
+                            {product.categories
+                              ?.map((cat) => cat?.name?.en)
+                              .join(", ")}
+                          </td>
+                          <td>{productKpi?.totalQuantitySold || 0}</td>
+                          <td>
+                            {formatCurrency(productKpi?.totalRevenue || 0)}
+                          </td>
+                          <td>
+                            {formatCurrency(productKpi?.avgSellingPrice || 0)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Product Status Modal */}
+        {showProductStatusModal && selectedProduct && (
+          <div className="product_status_modal">
+            <div
+              className="overlay"
+              onClick={() => {
+                setShowProductStatusModal(false);
+                setSelectedProduct(null);
+                setSelectedProductKpi(null);
+              }}
+            ></div>
+
+            <div className="product_status_modal_container">
+              <IoIosCloseCircleOutline
+                className="close_status_icon"
+                onClick={() => {
+                  setShowProductStatusModal(false);
+                  setSelectedProduct(null);
+                  setSelectedProductKpi(null);
+                }}
+              />
+
+              <div className="product_status_content">
+                <h2>Product Status</h2>
+                <div className="product_status_info">
+                  <div className="product_status_item">
+                    <span className="status_label">Product Name:</span>
+                    <span className="status_value">
+                      {selectedProduct?.name?.en ||
+                        selectedProduct?.name ||
+                        "N/A"}
+                    </span>
+                  </div>
+                  <div className="product_status_item">
+                    <span className="status_label">SKU:</span>
+                    <span className="status_value">
+                      {selectedProductKpi?.sku || selectedProduct?._id || "N/A"}
+                    </span>
+                  </div>
+                  {selectedProduct?.brand && (
+                    <div className="product_status_item">
+                      <span className="status_label">Brand:</span>
+                      <span className="status_value">
+                        {selectedProduct?.brand?.name?.en ||
+                          selectedProduct?.brand?.name ||
+                          "N/A"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {selectedProductKpi ? (
+                  <div className="product_kpi_display">
+                    <div className="kpi_card">
+                      <div className="kpi_label">Total Quantity Sold</div>
+                      <div className="kpi_value">
+                        {selectedProductKpi.totalQuantitySold || 0}
+                      </div>
+                    </div>
+                    <div className="kpi_card">
+                      <div className="kpi_label">Total Revenue</div>
+                      <div className="kpi_value">
+                        {formatCurrency(selectedProductKpi.totalRevenue || 0)}
+                      </div>
+                    </div>
+                    <div className="kpi_card">
+                      <div className="kpi_label">Avg Selling Price</div>
+                      <div className="kpi_value">
+                        {formatCurrency(
+                          selectedProductKpi.avgSellingPrice || 0
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="loading">Loading product statistics...</div>
+                )}
+
+                <div className="status_date_info">
+                  <p>
+                    Period: {startDate} to {endDate}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

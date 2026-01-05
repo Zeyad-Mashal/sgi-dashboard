@@ -213,7 +213,7 @@ const Orders = () => {
                 <div className="order_list">
                   {orderDetails?.cartItems?.map((prod) => (
                     <div className="order_item" key={prod._id}>
-                      <img src={prod.productId.picUrls[0]} alt="" />
+                      <img src={prod?.productId?.picUrls[0]} alt="" />
                       <div className="item_details">
                         <h3>{prod.name}</h3>
                         <p>Quantity: {prod.quantity}</p>

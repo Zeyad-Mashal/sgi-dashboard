@@ -10,6 +10,7 @@ import { IoIosCloseCircleOutline } from "react-icons/io";
 import AddTrader from "../../API/Trader/AddTrader";
 import UpdateTrader from "../../API/Trader/UpdateTrader";
 import DeleteTrader from "../../API/Trader/DeleteTrader";
+import GetTraderKpis from "../../API/Kpis/GetTraderKpis";
 const Trader = () => {
   useEffect(() => {
     getAllMerchants();
@@ -49,6 +50,54 @@ const Trader = () => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteTrader, setDeleteTrader] = useState(null);
 
+  // trader status modal
+  const [openStatusModal, setOpenStatusModal] = useState(false);
+  const [selectedTrader, setSelectedTrader] = useState(null);
+  const [traderKpi, setTraderKpi] = useState(null);
+  const [traderKpiLoading, setTraderKpiLoading] = useState(false);
+  const [traderKpiError, setTraderKpiError] = useState(null);
+  
+  // Date range for trader KPIs
+  const getDefaultEndDate = () => new Date().toISOString().split("T")[0];
+  const getDefaultStartDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 7);
+    return date.toISOString().split("T")[0];
+  };
+  const [statusStartDate, setStatusStartDate] = useState(getDefaultStartDate());
+  const [statusEndDate, setStatusEndDate] = useState(getDefaultEndDate());
+
+  const handleTraderClick = (trader) => {
+    setSelectedTrader(trader);
+    setOpenStatusModal(true);
+    setTraderKpi(null);
+    setTraderKpiError(null);
+    // Fetch trader KPIs
+    GetTraderKpis(
+      setTraderKpi,
+      setTraderKpiError,
+      setTraderKpiLoading,
+      statusStartDate,
+      statusEndDate,
+      trader._id
+    );
+  };
+
+  useEffect(() => {
+    if (openStatusModal && selectedTrader) {
+      setTraderKpi(null);
+      setTraderKpiError(null);
+      GetTraderKpis(
+        setTraderKpi,
+        setTraderKpiError,
+        setTraderKpiLoading,
+        statusStartDate,
+        statusEndDate,
+        selectedTrader._id
+      );
+    }
+  }, [statusStartDate, statusEndDate, openStatusModal, selectedTrader]);
+
   return (
     <div className="traders">
       <div className="traders_top">
@@ -79,14 +128,18 @@ const Trader = () => {
             ) : (
               allRequests.map((req) => {
                 return (
-                  <tr key={req._id}>
+                  <tr 
+                    key={req._id}
+                    className="trader_row_clickable"
+                    onClick={() => handleTraderClick(req)}
+                  >
                     <td>{req.name}</td>
                     <td>{req.phone}</td>
                     <td>{req.email}</td>
                     <td>{req.phone}</td>
                     <td>{req.taxCard}</td>
                     <td>{req.businessLicense}</td>
-                    <td className="actions">
+                    <td className="actions" onClick={(e) => e.stopPropagation()}>
                       <RiDeleteBin6Line
                         className="delete_icon"
                         onClick={() => {
@@ -343,6 +396,97 @@ const Trader = () => {
               </button>
 
               {error && <p className="error">{error}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trader Status Modal */}
+      {openStatusModal && selectedTrader && (
+        <div className="add_Trader">
+          <div
+            className="overlay"
+            onClick={() => setOpenStatusModal(false)}
+          ></div>
+          <div className="add_Trader_container status_modal_container">
+            <IoIosCloseCircleOutline
+              onClick={() => setOpenStatusModal(false)}
+            />
+            <div className="add_title">
+              <img src={building} alt="" />
+              <div className="add_title_info">
+                <h2>Trader Status</h2>
+                <p>{selectedTrader.name} - Performance Overview</p>
+              </div>
+            </div>
+
+            {/* Date Picker Section */}
+            <div className="status_date_picker">
+              <div className="status_date_item">
+                <label>Start Date:</label>
+                <input
+                  type="date"
+                  value={statusStartDate}
+                  onChange={(e) => setStatusStartDate(e.target.value)}
+                  className="date_input"
+                />
+              </div>
+              <div className="status_date_item">
+                <label>End Date:</label>
+                <input
+                  type="date"
+                  value={statusEndDate}
+                  onChange={(e) => setStatusEndDate(e.target.value)}
+                  className="date_input"
+                />
+              </div>
+            </div>
+
+            {/* KPI Display */}
+            {traderKpiLoading ? (
+              <div className="loading">
+                <p>Loading trader statistics...</p>
+                <span className="loader"></span>
+              </div>
+            ) : traderKpiError ? (
+              <div className="error">{traderKpiError}</div>
+            ) : traderKpi ? (
+              <div className="trader_kpi_display">
+                <div className="kpi_card">
+                  <div className="kpi_label">Total Orders</div>
+                  <div className="kpi_value">{traderKpi.totalOrders || 0}</div>
+                </div>
+                <div className="kpi_card">
+                  <div className="kpi_label">Total Items Purchased</div>
+                  <div className="kpi_value">{traderKpi.totalItemsPurchased || 0}</div>
+                </div>
+                <div className="kpi_card">
+                  <div className="kpi_label">Total Revenue</div>
+                  <div className="kpi_value">
+                    AED {traderKpi.totalRevenue?.toLocaleString() || "0"}
+                  </div>
+                </div>
+                <div className="kpi_card">
+                  <div className="kpi_label">Average Order Value</div>
+                  <div className="kpi_value">
+                    AED {traderKpi.avgOrderValue?.toLocaleString() || "0"}
+                  </div>
+                </div>
+                <div className="kpi_card full_width">
+                  <div className="kpi_label">User Name</div>
+                  <div className="kpi_value">{traderKpi.userName || "N/A"}</div>
+                </div>
+                <div className="kpi_card full_width">
+                  <div className="kpi_label">User Phone</div>
+                  <div className="kpi_value">{traderKpi.userPhone || "N/A"}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="no_data">No data available for the selected period</div>
+            )}
+
+            <div className="add_btns">
+              <button onClick={() => setOpenStatusModal(false)}>Close</button>
             </div>
           </div>
         </div>
