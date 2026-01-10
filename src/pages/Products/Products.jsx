@@ -89,7 +89,8 @@ const Products = () => {
   const [arFeatures, setArFeatures] = useState("");
   const [enFeatures, setEnFeatures] = useState("");
   const [company, setcompany] = useState("");
-
+  const [defaultPriceBox, setDefaultPriceBox] = useState();
+  const [piecesNumber, setPiecesNumber] = useState();
   // MULTIPLE CATEGORIES
   const [categories, setcategories] = useState([]);
 
@@ -104,17 +105,22 @@ const Products = () => {
 
   const [selectedTier, setSelectedTier] = useState("");
   const [tierPriceValue, setTierPriceValue] = useState("");
-
+  const [boxTierPriceValue, setBoxTierPriceValue] = useState("");
   const addTierPrice = () => {
     if (!selectedTier || !tierPriceValue) return;
 
     settierPrices((prev) => [
       ...prev,
-      { tier: selectedTier, price: Number(tierPriceValue) },
+      {
+        tier: selectedTier,
+        price: Number(tierPriceValue),
+        boxPrice: boxTierPriceValue ? Number(boxTierPriceValue) : undefined,
+      },
     ]);
 
     setSelectedTier("");
     setTierPriceValue("");
+    setBoxTierPriceValue("");
   };
 
   const [stockQ, setStockQ] = useState("");
@@ -142,6 +148,11 @@ const Products = () => {
     setGalleryImages([]);
     setIsEditMode(false);
     setEditingProductId(null);
+    setDefaultPriceBox("");
+    setPiecesNumber("");
+    setSelectedTier("");
+    setTierPriceValue("");
+    setBoxTierPriceValue("");
   };
 
   // POPULATE FORM WITH PRODUCT DATA
@@ -159,6 +170,19 @@ const Products = () => {
     setcompany(product?.company?._id || product?.company || "");
     setBrand(product?.brand?._id || product?.brand || "");
 
+    // Set defaultPriceBox and piecesNumber - handle null/undefined
+    setDefaultPriceBox(
+      product?.defaultPriceBox !== undefined &&
+        product?.defaultPriceBox !== null
+        ? product.defaultPriceBox.toString()
+        : ""
+    );
+    setPiecesNumber(
+      product?.piecesNumber !== undefined && product?.piecesNumber !== null
+        ? product.piecesNumber.toString()
+        : ""
+    );
+
     // Set categories
     if (product?.categories && Array.isArray(product.categories)) {
       const categoryIds = product.categories.map((cat) => cat._id || cat);
@@ -167,9 +191,18 @@ const Products = () => {
       setcategories([]);
     }
 
-    // Set tier prices if available
+    // Set tier prices if available - ensure boxPrice is preserved
     if (product?.tierPrices && Array.isArray(product.tierPrices)) {
-      settierPrices(product.tierPrices);
+      // Map tier prices to ensure boxPrice is properly included
+      const mappedTierPrices = product.tierPrices.map((tp) => ({
+        tier: tp.tier?._id || tp.tier,
+        price: tp.price,
+        boxPrice:
+          tp.boxPrice !== undefined && tp.boxPrice !== null
+            ? tp.boxPrice
+            : undefined,
+      }));
+      settierPrices(mappedTierPrices);
     } else {
       settierPrices([]);
     }
@@ -225,6 +258,22 @@ const Products = () => {
     data.append("stockQuantity", stockQ);
     data.append("stockStatus", stockStatus);
 
+    // PRICE BOX
+    if (
+      defaultPriceBox !== undefined &&
+      defaultPriceBox !== null &&
+      defaultPriceBox !== ""
+    ) {
+      data.append("defaultPriceBox", defaultPriceBox);
+    }
+    if (
+      piecesNumber !== undefined &&
+      piecesNumber !== null &&
+      piecesNumber !== ""
+    ) {
+      data.append("piecesNumber", piecesNumber);
+    }
+
     // MULTIPLE CATEGORIES
     categories.forEach((catId) => {
       data.append("categories", catId);
@@ -234,6 +283,10 @@ const Products = () => {
     tierPrices.forEach((tp, index) => {
       data.append(`tierPrices[${index}][tier]`, tp.tier);
       data.append(`tierPrices[${index}][price]`, tp.price);
+      // Only send boxPrice if it exists and is not undefined
+      if (tp.boxPrice !== undefined && tp.boxPrice !== null) {
+        data.append(`tierPrices[${index}][boxPrice]`, tp.boxPrice);
+      }
     });
 
     // IMAGES
@@ -433,15 +486,30 @@ const Products = () => {
                     <span>Default Product Price</span>
                     <input
                       type="text"
-                      placeholder="100 AED"
+                      placeholder="100"
                       value={defaultPrice}
                       onChange={(e) => setdefaultPrice(e.target.value)}
                     />
                   </label>
 
                   <label>
-                    <span>Discounted Price (Optional)</span>
-                    <input type="text" placeholder="89 AED" />
+                    <span>Box Price</span>
+                    <input
+                      type="text"
+                      placeholder="89"
+                      value={defaultPriceBox}
+                      onChange={(e) => setDefaultPriceBox(e.target.value)}
+                    />
+                  </label>
+
+                  <label>
+                    <span>Box Pieces Number</span>
+                    <input
+                      type="text"
+                      placeholder="10"
+                      value={piecesNumber}
+                      onChange={(e) => setPiecesNumber(e.target.value)}
+                    />
                   </label>
                 </div>
 
@@ -477,6 +545,16 @@ const Products = () => {
                           onChange={(e) => setTierPriceValue(e.target.value)}
                         />
                       </div>
+                      <div className="input_group">
+                        <label>Box Tier Price (AED)</label>
+
+                        <input
+                          type="number"
+                          placeholder="220"
+                          value={boxTierPriceValue}
+                          onChange={(e) => setBoxTierPriceValue(e.target.value)}
+                        />
+                      </div>
 
                       <button className="add_tier_btn" onClick={addTierPrice}>
                         + Add Tier
@@ -492,6 +570,7 @@ const Products = () => {
                               {allTiers.find((t) => t._id === item.tier)?.name}
                             </h4>
                             <p>{item.price} AED</p>
+                            {item.boxPrice && <p>Box: {item.boxPrice} AED</p>}
                           </div>
 
                           <IoIosCloseCircleOutline
