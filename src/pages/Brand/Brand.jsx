@@ -46,6 +46,17 @@ const Brand = () => {
     }
   };
 
+  const resetBrandForm = () => {
+    setBrandEn("");
+    setBrandAr("");
+    setCompanyId("");
+    setImage(null);
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = null;
+    }
+  };
+
   const handleAddBrand = () => {
     if (!brandEn || !brandAr || !image || !companyId) {
       setError("Please fill all fields");
@@ -61,7 +72,10 @@ const Brand = () => {
       formData,
       setError,
       setLoading,
-      setOpenBrandModal,
+      () => {
+        setOpenBrandModal(false);
+        resetBrandForm(); // Reset form when modal closes on success
+      },
       getAllBrands,
       companyId
     );
@@ -225,10 +239,16 @@ const Brand = () => {
         <div className="add_Brand">
           <div
             className="overlay"
-            onClick={() => setOpenBrandModal(false)}
+            onClick={() => {
+              setOpenBrandModal(false);
+              resetBrandForm();
+            }}
           ></div>
           <div className="add_Brand_container">
-            <IoIosCloseCircleOutline onClick={() => setOpenBrandModal(false)} />
+            <IoIosCloseCircleOutline onClick={() => {
+              setOpenBrandModal(false);
+              resetBrandForm();
+            }} />
             <div className="add_title">
               <img src={add_brand} alt="" />
               <div className="add_title_info">
@@ -311,7 +331,10 @@ const Brand = () => {
               </label>
             </div>
             <div className="add_btns">
-              <button onClick={() => setOpenBrandModal(false)}>Cancel</button>
+              <button onClick={() => {
+                setOpenBrandModal(false);
+                resetBrandForm();
+              }}>Cancel</button>
               <button onClick={handleAddBrand}>
                 {loading ? "loading..." : "Add Brand"}
               </button>

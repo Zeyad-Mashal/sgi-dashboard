@@ -1,5 +1,5 @@
 const URL = "https://sgi-dy1p.onrender.com/api/v1/category/add/";
-const AddCategory = async (data, setError, setLoading, setOpenAddModal, getAllCategories, company) => {
+const AddCategory = async (data, setError, setLoading, setOpenAddModalOrCallback, getAllCategories, company) => {
     setLoading(true)
     const token = localStorage.getItem("SGI_TOKEN")
     try {
@@ -16,7 +16,12 @@ const AddCategory = async (data, setError, setLoading, setOpenAddModal, getAllCa
         const result = await response.json();
 
         if (response.ok) {
-            setOpenAddModal(false);
+            // Handle callback if it's a function, otherwise use as state setter
+            if (typeof setOpenAddModalOrCallback === 'function') {
+                setOpenAddModalOrCallback();
+            } else {
+                setOpenAddModalOrCallback(false);
+            }
             setLoading(false)
             getAllCategories()
         } else {

@@ -36,6 +36,14 @@ const Categories = () => {
   const [catNameEn, setCatNameEn] = useState("");
   const [catNameAr, setCatNameAr] = useState("");
   const [company, setCompany] = useState("");
+  
+  const resetCategoryForm = () => {
+    setCatNameEn("");
+    setCatNameAr("");
+    setCompany("");
+    setError(null);
+  };
+
   const handleAddCategory = () => {
     const data = {
       enName: catNameEn,
@@ -45,7 +53,10 @@ const Categories = () => {
       data,
       setError,
       setLoading,
-      setOpenAddModal,
+      () => {
+        setOpenAddModal(false);
+        resetCategoryForm(); // Reset form when modal closes on success
+      },
       getAllCategories,
       company
     );
@@ -76,6 +87,7 @@ const Categories = () => {
     const data = {
       enName: editCatNameEn,
       arName: editCatNameAr,
+      company: editCompany,
     };
 
     EditCategory(
@@ -117,13 +129,74 @@ const Categories = () => {
 
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
+
+  const resetSubCategoryForm = () => {
+    setSubEnName("");
+    setSubArName("");
+    setSelectedCompanyId("");
+    setSelectedCategoryId("");
+    setError(null);
+  };
+
   const handleOpenSubModal = (cat) => {
-    setSelectedCompanyId(cat.company._id);
-    setSelectedCategoryId(cat._id);
+    // Reset form first (this clears error too)
+    resetSubCategoryForm();
+
+    // Safely handle company - use the same pattern as handleOpenEdit and table rendering
+    const companyId =
+      cat.company && typeof cat.company === "object"
+        ? cat.company._id
+        : cat.company || "";
+
+    // Debug: Log to console to help diagnose the issue
+    console.log("Opening sub category modal for category:", cat);
+    console.log("Company object:", cat.company);
+    console.log("Extracted companyId:", companyId);
+
+    // Set the IDs
+    setSelectedCompanyId(companyId);
+    setSelectedCategoryId(cat._id || "");
+
+    // Always open the modal - validation will happen on submit
     setOpenSubModal(true);
+
+    // Only show warning if company ID is truly missing
+    if (!companyId || companyId === "" || companyId === "undefined") {
+      setError(
+        "Warning: Company ID is missing. Please ensure the category has a valid company."
+      );
+    } else {
+      // Clear any previous errors if company ID is found
+      setError(null);
+    }
   };
 
   const handleAddSubCategory = () => {
+    // Validate required fields
+    if (!subEnName || !subArName) {
+      setError("Please fill in both English and Arabic names");
+      return;
+    }
+
+    // Validate IDs
+    if (
+      !selectedCompanyId ||
+      selectedCompanyId === "undefined" ||
+      selectedCompanyId === ""
+    ) {
+      setError("Company ID is missing. Please try again.");
+      return;
+    }
+
+    if (
+      !selectedCategoryId ||
+      selectedCategoryId === "undefined" ||
+      selectedCategoryId === ""
+    ) {
+      setError("Category ID is missing. Please try again.");
+      return;
+    }
+
     const data = {
       enName: subEnName,
       arName: subArName,
@@ -237,21 +310,38 @@ const Categories = () => {
               </div>
             ) : (
               allCategories.map((category) => {
+                // Safely get company info
+                const companyName =
+                  category.company && typeof category.company === "object"
+                    ? category.company.name?.en ||
+                      category.company.name?.ar ||
+                      "N/A"
+                    : "N/A";
+                const companyId =
+                  category.company && typeof category.company === "object"
+                    ? category.company._id
+                    : category.company || "";
+
                 return (
                   <tr key={category._id}>
                     <td>{category.name?.en}</td>
                     <td>{category.name?.ar}</td>
-                    <td>{category.company.name?.en}</td>
+                    <td>{companyName}</td>
                     <button
                       className="show_sub_btn"
                       onClick={() => {
-                        setSelectedSubCategories(category.subCategories);
+                        setSelectedSubCategories(category.subCategories || []);
 
-                        setShowCompanyId(category.company._id);
-                        setShowCompanyName(category.company.name); // << هنا الاسم
+                        setShowCompanyId(companyId);
+                        setShowCompanyName(
+                          category.company &&
+                            typeof category.company === "object"
+                            ? category.company.name
+                            : { en: "N/A", ar: "N/A" }
+                        );
 
                         setShowCategoryId(category._id);
-                        setShowCategoryName(category.name); // << هنا الاسم
+                        setShowCategoryName(category.name);
 
                         setOpenShowSubModal(true);
                       }}
@@ -288,10 +378,16 @@ const Categories = () => {
       </div>
       {openAddModal && (
         <div className="add_category">
-          <div className="overlay" onClick={() => setOpenAddModal(false)}></div>
+          <div className="overlay" onClick={() => {
+            setOpenAddModal(false);
+            resetCategoryForm();
+          }}></div>
 
           <div className="add_category_container">
-            <IoIosCloseCircleOutline onClick={() => setOpenAddModal(false)} />
+            <IoIosCloseCircleOutline onClick={() => {
+              setOpenAddModal(false);
+              resetCategoryForm();
+            }} />
 
             <div className="add_title">
               <img src={tierImage} alt="" />
@@ -339,7 +435,10 @@ const Categories = () => {
             </div>
 
             <div className="add_btns">
-              <button onClick={() => setOpenAddModal(false)}>Cancel</button>
+              <button onClick={() => {
+                setOpenAddModal(false);
+                resetCategoryForm();
+              }}>Cancel</button>
 
               <button onClick={handleAddCategory}>
                 {loading ? "loading..." : "Add Category"}
@@ -465,10 +564,21 @@ const Categories = () => {
 
       {openSubModal && (
         <div className="add_category">
-          <div className="overlay" onClick={() => setOpenSubModal(false)}></div>
+          <div
+            className="overlay"
+            onClick={() => {
+              setOpenSubModal(false);
+              resetSubCategoryForm();
+            }}
+          ></div>
 
           <div className="add_category_container">
-            <IoIosCloseCircleOutline onClick={() => setOpenSubModal(false)} />
+            <IoIosCloseCircleOutline
+              onClick={() => {
+                setOpenSubModal(false);
+                resetSubCategoryForm();
+              }}
+            />
 
             <div className="add_title">
               <img src={tierImage} alt="" />
@@ -505,7 +615,14 @@ const Categories = () => {
             </div>
 
             <div className="add_btns">
-              <button onClick={() => setOpenSubModal(false)}>Cancel</button>
+              <button
+                onClick={() => {
+                  setOpenSubModal(false);
+                  resetSubCategoryForm();
+                }}
+              >
+                Cancel
+              </button>
 
               <button onClick={handleAddSubCategory}>
                 {loading ? "Loading..." : "Add Sub Category"}

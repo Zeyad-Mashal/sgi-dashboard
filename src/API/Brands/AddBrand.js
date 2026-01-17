@@ -1,5 +1,5 @@
 const URL = "https://sgi-dy1p.onrender.com/api/v1/brand/add/";
-const AddBrand = async (formData, setError, setLoading, setOpenBrandModal, getAllBrands, companyId) => {
+const AddBrand = async (formData, setError, setLoading, setOpenBrandModalOrCallback, getAllBrands, companyId) => {
     setLoading(true)
     const token = localStorage.getItem("SGI_TOKEN")
     try {
@@ -15,7 +15,12 @@ const AddBrand = async (formData, setError, setLoading, setOpenBrandModal, getAl
         const result = await response.json();
 
         if (response.ok) {
-            setOpenBrandModal(false);
+            // Handle callback if it's a function, otherwise use as state setter
+            if (typeof setOpenBrandModalOrCallback === 'function') {
+                setOpenBrandModalOrCallback();
+            } else {
+                setOpenBrandModalOrCallback(false);
+            }
             setLoading(false)
             getAllBrands()
         } else {
