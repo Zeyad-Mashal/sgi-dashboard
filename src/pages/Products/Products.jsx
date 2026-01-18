@@ -791,6 +791,7 @@ const Products = () => {
                     value={company}
                     onChange={(e) => setcompany(e.target.value)}
                   >
+                    <option value="">Choose Company</option>
                     {allCompanies.map((com) => (
                       <option value={com._id}>{com.name.en}</option>
                     ))}
@@ -805,6 +806,7 @@ const Products = () => {
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
                   >
+                    <option value="">Choose Brand</option>
                     {allBrands.map((brand) => (
                       <option value={brand._id}>{brand.name.en}</option>
                     ))}
