@@ -408,6 +408,7 @@ console.log(allProducts);
                   <th>Barcode Number</th>
                   <th>Category</th>
                   <th>Company</th>
+                  <th>Brand</th>
                   <th>Price</th>
                   <th>Action</th>
                 </tr>
@@ -424,6 +425,7 @@ console.log(allProducts);
                       <td>{item?.code}</td>
                       <td>{item?.categories.map((cat) => cat.name.en)}</td>
                       <td>{item?.company?.name?.en}</td>
+                      <td>{item?.brand?.name?.en}</td>
                       <td>{item?.defaultPrice} AED</td>
                       <td className="actions">
                         <RiDeleteBin6Line
