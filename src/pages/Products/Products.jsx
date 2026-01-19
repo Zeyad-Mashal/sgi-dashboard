@@ -11,7 +11,7 @@ import { IoReturnUpBack } from "react-icons/io5";
 import PriceTier from "../../API/PriceTier/PriceTier";
 import CompanyApi from "../../API/Company/CompanyApi";
 import AllBrands from "../../API/Brands/AllBrands";
-import CategoriesApi from "../../API/Categories/CategoriesApi";
+import GetAllCategories from "../../API/Categories/GetAllCategories";
 import AddProduct from "../../API/Products/AddProduct";
 import GetProducts from "../../API/Products/GetProducts";
 import UpdateProduct from "../../API/Products/UpdateProduct";
@@ -74,7 +74,7 @@ const Products = () => {
 
   const [allCategories, setAllCategories] = useState([]);
   const getAllCategories = () => {
-    CategoriesApi(setAllCategories, setError, setLoading);
+    GetAllCategories(setAllCategories, setError, setLoading);
   };
 
   // INPUTS
@@ -91,12 +91,39 @@ const Products = () => {
   const [company, setcompany] = useState("");
   const [defaultPriceBox, setDefaultPriceBox] = useState();
   const [piecesNumber, setPiecesNumber] = useState();
-  // MULTIPLE CATEGORIES
+  // MULTIPLE CATEGORIES (subcategories)
   const [categories, setcategories] = useState([]);
+  const [expandedMainCategories, setExpandedMainCategories] = useState([]);
 
-  const handleCategorySelect = (e) => {
-    const selected = [...e.target.selectedOptions].map((o) => o.value);
-    setcategories(selected);
+  // Toggle main category expansion to show/hide subcategories
+  const toggleMainCategory = (categoryId, e) => {
+    // Prevent any event propagation to avoid triggering checkbox clicks
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setExpandedMainCategories((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  // Handle subcategory selection (multiple subcategories from multiple main categories)
+  const handleSubCategorySelect = (subCategoryId, e) => {
+    // Prevent event propagation to ensure only explicit checkbox clicks trigger this
+    if (e) {
+      e.stopPropagation();
+    }
+    setcategories((prev) => {
+      if (prev.includes(subCategoryId)) {
+        // Remove if already selected
+        return prev.filter((id) => id !== subCategoryId);
+      } else {
+        // Add if not selected
+        return [...prev, subCategoryId];
+      }
+    });
   };
 
   const [brand, setBrand] = useState("");
@@ -141,6 +168,7 @@ const Products = () => {
     setcompany("");
     setBrand("");
     setcategories([]);
+    setExpandedMainCategories([]);
     settierPrices([]);
     setStockQ("");
     setStockStatus("");
@@ -183,12 +211,28 @@ const Products = () => {
         : ""
     );
 
-    // Set categories
+    // Set categories (subcategories only) - don't auto-expand main categories
     if (product?.categories && Array.isArray(product.categories)) {
+      // Extract category IDs (could be main or sub categories)
       const categoryIds = product.categories.map((cat) => cat._id || cat);
-      setcategories(categoryIds);
+      // Only store subcategory IDs, filter out main category IDs
+      const subCategoryIds = [];
+      allCategories.forEach((mainCat) => {
+        if (mainCat.subCategories && Array.isArray(mainCat.subCategories)) {
+          mainCat.subCategories.forEach((subCat) => {
+            const subCatId = subCat._id || subCat;
+            if (categoryIds.includes(subCatId)) {
+              subCategoryIds.push(subCatId);
+            }
+          });
+        }
+      });
+      setcategories(subCategoryIds);
+      // Don't auto-expand - let user manually expand if needed
+      setExpandedMainCategories([]);
     } else {
       setcategories([]);
+      setExpandedMainCategories([]);
     }
 
     // Set tier prices if available - ensure boxPrice is preserved
@@ -754,33 +798,105 @@ const Products = () => {
               </div>
               <div className="add_product_right_inputs">
                 <label>
-                  <span>Product Categories</span>
+                  <span>Product Categories (Select Subcategories)</span>
 
-                  <div className="categories_checkbox_list">
-                    {allCategories.map((cat) => (
-                      <label key={cat._id} className="category_checkbox_item">
-                        <input
-                          type="checkbox"
-                          value={cat._id}
-                          checked={categories.includes(cat._id)}
-                          onChange={(e) => {
-                            const value = e.target.value;
+                  <div className="categories_hierarchical_list">
+                    {allCategories.map((mainCat) => {
+                      const isExpanded = expandedMainCategories.includes(mainCat._id);
+                      const subCategories = mainCat.subCategories || [];
+                      const hasSubCategories = subCategories.length > 0;
 
-                            if (categories.includes(value)) {
-                              // remove it
-                              setcategories(
-                                categories.filter((c) => c !== value)
-                              );
-                            } else {
-                              // add it
-                              setcategories([...categories, value]);
-                            }
-                          }}
-                        />
-                        {cat.name.en}
-                      </label>
-                    ))}
+                      return (
+                        <div key={mainCat._id} className="main_category_item">
+                          <div
+                            className={`main_category_header ${hasSubCategories ? 'clickable' : ''}`}
+                            onClick={(e) => hasSubCategories && toggleMainCategory(mainCat._id, e)}
+                          >
+                            <span className="main_category_name">
+                              {mainCat.name?.en || mainCat.name?.ar || "Category"}
+                            </span>
+                            {hasSubCategories && (
+                              <span className="expand_icon">
+                                {isExpanded ? "▼" : "▶"}
+                              </span>
+                            )}
+                            {!hasSubCategories && (
+                              <span className="no_subcategories">(No subcategories)</span>
+                            )}
+                          </div>
+
+                          {isExpanded && hasSubCategories && (
+                            <div className="subcategories_list">
+                              {subCategories.map((subCat) => {
+                                const subCatId = subCat._id || subCat;
+                                const isSelected = categories.includes(subCatId);
+                                
+                                return (
+                                  <div
+                                    key={subCatId}
+                                    className="subcategory_checkbox_item"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', width: '100%' }}>
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={(e) => handleSubCategorySelect(subCatId, e)}
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                      <span>
+                                        {subCat.name?.en || subCat.name?.ar || "Subcategory"}
+                                      </span>
+                                    </label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
+
+                  {/* Show ALL selected subcategories from ALL main categories */}
+                  {categories.length > 0 && (
+                    <div className="selected_categories_summary">
+                      <strong>Selected Subcategories ({categories.length}):</strong>
+                      <div className="selected_categories_tags">
+                        {categories.map((catId) => {
+                          // Find the subcategory name and its main category from ALL categories
+                          let subCatName = catId;
+                          let mainCatName = "";
+                          
+                          allCategories.forEach((mainCat) => {
+                            if (mainCat.subCategories && Array.isArray(mainCat.subCategories)) {
+                              const subCat = mainCat.subCategories.find(
+                                (sc) => (sc._id || sc) === catId
+                              );
+                              if (subCat) {
+                                subCatName = subCat.name?.en || subCat.name?.ar || catId;
+                                mainCatName = mainCat.name?.en || mainCat.name?.ar || "";
+                              }
+                            }
+                          });
+                          
+                          return (
+                            <span key={catId} className="selected_category_tag">
+                              {mainCatName && <span className="main_cat_label">{mainCatName}: </span>}
+                              {subCatName}
+                              <button
+                                type="button"
+                                onClick={() => handleSubCategorySelect(catId)}
+                                className="remove_category_btn"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </label>
               </div>
 
