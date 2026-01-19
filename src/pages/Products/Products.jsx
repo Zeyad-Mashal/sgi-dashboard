@@ -189,7 +189,14 @@ const Products = () => {
     setArName(product?.name?.ar || "");
     setEnDescription(product?.description?.en || "");
     setArDescription(product?.description?.ar || "");
-    setdefaultPrice(product?.price?.toString() || "");
+    // Use defaultPrice from backend, fallback to price if defaultPrice doesn't exist
+    setdefaultPrice(
+      product?.defaultPrice !== undefined && product?.defaultPrice !== null
+        ? product.defaultPrice.toString()
+        : product?.price !== undefined && product?.price !== null
+        ? product.price.toString()
+        : ""
+    );
     setcode(product?.code || "");
     setArUses(product?.uses?.ar || "");
     setEnUses(product?.uses?.en || "");
@@ -198,16 +205,27 @@ const Products = () => {
     setcompany(product?.company?._id || product?.company || "");
     setBrand(product?.brand?._id || product?.brand || "");
 
-    // Set defaultPriceBox and piecesNumber - handle null/undefined
+    // Set defaultPriceBox and piecesNumber - handle null/undefined/0/empty string
+    // Don't show "0" if the value is 0, null, undefined, or empty
+    const priceBoxValue = product?.defaultPriceBox;
     setDefaultPriceBox(
-      product?.defaultPriceBox !== undefined &&
-        product?.defaultPriceBox !== null
-        ? product.defaultPriceBox.toString()
+      priceBoxValue !== undefined &&
+        priceBoxValue !== null &&
+        priceBoxValue !== "" &&
+        priceBoxValue !== 0 &&
+        priceBoxValue !== "0"
+        ? priceBoxValue.toString()
         : ""
     );
+    
+    const piecesValue = product?.piecesNumber;
     setPiecesNumber(
-      product?.piecesNumber !== undefined && product?.piecesNumber !== null
-        ? product.piecesNumber.toString()
+      piecesValue !== undefined &&
+        piecesValue !== null &&
+        piecesValue !== "" &&
+        piecesValue !== 0 &&
+        piecesValue !== "0"
+        ? piecesValue.toString()
         : ""
     );
 
@@ -362,6 +380,7 @@ const Products = () => {
       resetForm();
     }
   };
+console.log(allProducts);
 
   return (
     <div className="products">
@@ -387,7 +406,7 @@ const Products = () => {
                   <th>Image</th>
                   <th>Product Name</th>
                   <th>Barcode Number</th>
-                  <th>Brand</th>
+                  <th>Category</th>
                   <th>Company</th>
                   <th>Price</th>
                   <th>Action</th>
@@ -405,7 +424,7 @@ const Products = () => {
                       <td>{item?.code}</td>
                       <td>{item?.categories.map((cat) => cat.name.en)}</td>
                       <td>{item?.company?.name?.en}</td>
-                      <td>{item?.price} AED</td>
+                      <td>{item?.defaultPrice} AED</td>
                       <td className="actions">
                         <RiDeleteBin6Line
                           className="delete_icon"
