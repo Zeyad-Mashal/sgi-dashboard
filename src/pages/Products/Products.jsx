@@ -294,6 +294,87 @@ const Products = () => {
 
   // SUBMIT PRODUCT (ADD OR UPDATE)
   const handleAddProduct = () => {
+    // Validation - Check required fields
+    const missingFields = [];
+
+    // Name (Arabic and English)
+    if (!arName || arName.trim() === "") {
+      missingFields.push("اسم المنتج (عربي)");
+    }
+    if (!enName || enName.trim() === "") {
+      missingFields.push("Product Name (English)");
+    }
+
+    // Barcode
+    if (!code || code.trim() === "") {
+      missingFields.push("Barcode Number");
+    }
+
+    // Description (Arabic and English)
+    if (!arDescription || arDescription.trim() === "") {
+      missingFields.push("وصف المنتج (عربي)");
+    }
+    if (!enDescription || enDescription.trim() === "") {
+      missingFields.push("Product Description (English)");
+    }
+
+    // Uses (Arabic and English)
+    if (!arUses || arUses.trim() === "") {
+      missingFields.push("استخدامات المنتج (عربي)");
+    }
+    if (!enUses || enUses.trim() === "") {
+      missingFields.push("Product Uses (English)");
+    }
+
+    // Default Price
+    if (!defaultPrice || defaultPrice.trim() === "" || defaultPrice === "0") {
+      missingFields.push("Default Product Price");
+    }
+
+    // Stock and Stock Status
+    if (!stockQ || stockQ.trim() === "") {
+      missingFields.push("Stock Quantity");
+    }
+    if (!stockStatus || stockStatus.trim() === "") {
+      missingFields.push("Stock Status");
+    }
+
+    // Images - at least main image
+    if (!mainImage) {
+      missingFields.push("Product Image (Main Image)");
+    }
+
+    // Features (Arabic and English)
+    if (!arFeatures || arFeatures.trim() === "") {
+      missingFields.push("مزايا المنتج (عربي)");
+    }
+    if (!enFeatures || enFeatures.trim() === "") {
+      missingFields.push("Product Features (English)");
+    }
+
+    // Categories - at least one
+    if (!categories || categories.length === 0) {
+      missingFields.push("Product Categories (at least one)");
+    }
+
+    // Company
+    if (!company || company.trim() === "") {
+      missingFields.push("Product Company");
+    }
+
+    // Brand
+    if (!brand || brand.trim() === "") {
+      missingFields.push("Product Brand");
+    }
+
+    // Show alert if there are missing fields
+    if (missingFields.length > 0) {
+      const message = `Please fill in the following required fields:\n\n${missingFields.join("\n")}`;
+      alert(message);
+      setError(`Missing required fields: ${missingFields.join(", ")}`);
+      return; // Stop submission
+    }
+
     const data = new FormData();
 
     // BASIC INFO
