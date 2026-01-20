@@ -1,7 +1,7 @@
-const URL = "https://sgi-dy1p.onrender.com/api/v1/product/get?page=1";
-const GetProducts = async (setAllProducts, setError, setLoading) => {
+const GetProducts = async (setAllProducts, setError, setLoading, page = 1, setPaginationInfo = null) => {
     setLoading(true)
     const token = localStorage.getItem("SGI_TOKEN")
+    const URL = `https://sgi-dy1p.onrender.com/api/v1/product/get?page=${page}`;
 
     try {
         const response = await fetch(URL, {
@@ -18,6 +18,16 @@ const GetProducts = async (setAllProducts, setError, setLoading) => {
 
         if (response.ok) {
             setAllProducts(result.products)
+            // Set pagination info if available and callback provided
+            if (setPaginationInfo && result) {
+                setPaginationInfo({
+                    currentPage: result.currentPage || page,
+                    totalPages: result.totalPages || null,
+                    totalProducts: result.totalProducts || result.total || null,
+                    hasNextPage: result.hasNextPage !== undefined ? result.hasNextPage : (result.products && result.products.length > 0),
+                    hasPrevPage: result.hasPrevPage !== undefined ? result.hasPrevPage : (page > 1)
+                })
+            }
             setLoading(false)
 
         } else {

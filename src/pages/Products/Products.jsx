@@ -16,15 +16,8 @@ import AddProduct from "../../API/Products/AddProduct";
 import GetProducts from "../../API/Products/GetProducts";
 import UpdateProduct from "../../API/Products/UpdateProduct";
 import DeleteProduct from "../../API/Products/DeleteProduct";
+import ProductSearch from "../../API/Search/ProductSearch";
 const Products = () => {
-  useEffect(() => {
-    getAllTier();
-    getAllCompanies();
-    getAllBrands();
-    getAllCategories();
-    GetProducts(setAllProducts, setError, setLoading);
-  }, []);
-
   const [showTable, setShowTable] = useState(true);
   const [AddProductModel, setAddProductModel] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -57,6 +50,23 @@ const Products = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginationInfo, setPaginationInfo] = useState({
+    currentPage: 1,
+    totalPages: null,
+    totalProducts: null,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
+
+  useEffect(() => {
+    getAllTier();
+    getAllCompanies();
+    getAllBrands();
+    getAllCategories();
+    GetProducts(setAllProducts, setError, setLoading, currentPage, setPaginationInfo);
+  }, [currentPage]);
 
   const getAllTier = () => {
     PriceTier(setAllTiers, setError, setLoading);
@@ -453,7 +463,7 @@ const Products = () => {
         () => {
           resetForm();
           // Refresh products list
-          GetProducts(setAllProducts, setError, setLoading);
+          GetProducts(setAllProducts, setError, setLoading, currentPage, setPaginationInfo);
         }
       );
     } else {
@@ -461,14 +471,30 @@ const Products = () => {
       resetForm();
     }
   };
-console.log(allProducts);
 
   return (
     <div className="products">
       {showTable && (
         <>
           <div className="products_top">
-            <input type="text" placeholder="search" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => {
+                const query = e.target.value;
+                setSearchQuery(query);
+                
+                // If input is empty, get all products
+                if (query.trim() === "") {
+                  setCurrentPage(1); // Reset to page 1 when clearing search
+                  GetProducts(setAllProducts, setError, setLoading, 1, setPaginationInfo);
+                } else {
+                  // Search as user types
+                  ProductSearch(setAllProducts, setError, setLoading, encodeURIComponent(query.trim()));
+                }
+              }}
+            />
             <button
               onClick={() => {
                 resetForm();
@@ -496,37 +522,95 @@ console.log(allProducts);
               </thead>
 
               <tbody>
-                {allProducts.map((item) => {
-                  return (
-                    <tr key={item._id}>
-                      <td className="product_image">
-                        <img src={item?.picUrls[0]} alt="" />
-                      </td>
-                      <td>{item?.name?.en}</td>
-                      <td>{item?.code}</td>
-                      <td>{item?.categories.map((cat) => cat.name.en)}</td>
-                      <td>{item?.company?.name?.en}</td>
-                      <td>{item?.brand?.name?.en || "under development"}</td>
-                      <td>{item?.defaultPrice} AED</td>
-                      <td className="actions">
-                        <RiDeleteBin6Line
-                          className="delete_icon"
-                          onClick={() => {
-                            setDeleteProduct(item);
-                            setOpenDeleteModal(true);
-                          }}
-                        />
-                        <RiEditLine
-                          className="edit_icon"
-                          onClick={() => handleEditClick(item)}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: "center", padding: "40px" }}>
+                      <div className="loading">
+                        <p>Searching products...</p>
+                        <span className="loader"></span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : allProducts.length > 0 ? (
+                  allProducts.map((item) => {
+                    return (
+                      <tr key={item._id}>
+                        <td className="product_image">
+                          <img src={item?.picUrls[0]} alt="" />
+                        </td>
+                        <td>{item?.name?.en}</td>
+                        <td>{item?.code}</td>
+                        <td>
+                          {item?.categories && Array.isArray(item.categories) && item.categories.length > 0
+                            ? item.categories.map((cat) => cat?.name?.en || cat?.name?.ar || "N/A").join(", ")
+                            : "No categories"}
+                        </td>
+                        <td>{item?.company?.name?.en}</td>
+                        <td>{item?.brand?.name?.en || "under development"}</td>
+                        <td>{item?.defaultPrice} AED</td>
+                        <td className="actions">
+                          <RiDeleteBin6Line
+                            className="delete_icon"
+                            onClick={() => {
+                              setDeleteProduct(item);
+                              setOpenDeleteModal(true);
+                            }}
+                          />
+                          <RiEditLine
+                            className="edit_icon"
+                            onClick={() => handleEditClick(item)}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: "center", padding: "40px" }}>
+                      <p>No products found</p>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls - Only show when not searching */}
+          {!loading && allProducts.length > 0 && !searchQuery && (
+            <div className="pagination_controls">
+              <button
+                onClick={() => {
+                  if (currentPage > 1) {
+                    setCurrentPage(currentPage - 1);
+                  }
+                }}
+                disabled={currentPage === 1 || !paginationInfo.hasPrevPage}
+                className="pagination_btn"
+              >
+                Previous
+              </button>
+              
+              <div className="pagination_info">
+                <span>Page {paginationInfo.currentPage || currentPage}</span>
+                {paginationInfo.totalPages && (
+                  <span> of {paginationInfo.totalPages}</span>
+                )}
+                {paginationInfo.totalProducts && (
+                  <span> ({paginationInfo.totalProducts} total products)</span>
+                )}
+              </div>
+
+              <button
+                onClick={() => {
+                  setCurrentPage(currentPage + 1);
+                }}
+                disabled={!paginationInfo.hasNextPage}
+                className="pagination_btn"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </>
       )}
 
@@ -538,6 +622,10 @@ console.log(allProducts);
                 setShowTable(true);
                 setAddProductModel(false);
                 resetForm();
+                // Clear search and reload all products
+                setSearchQuery("");
+                setCurrentPage(1);
+                GetProducts(setAllProducts, setError, setLoading, 1, setPaginationInfo);
               }}
               className="returnToProducts"
             >
@@ -1097,7 +1185,7 @@ console.log(allProducts);
                       setError,
                       setLoading,
                       setOpenDeleteModal,
-                      () => GetProducts(setAllProducts, setError, setLoading)
+                      () => GetProducts(setAllProducts, setError, setLoading, currentPage, setPaginationInfo)
                     );
                   }}
                 >
