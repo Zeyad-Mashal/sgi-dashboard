@@ -471,6 +471,8 @@ const Products = () => {
       resetForm();
     }
   };
+  console.log(allProducts);
+  
 
   return (
     <div className="products">
@@ -515,7 +517,7 @@ const Products = () => {
                   <th>Barcode Number</th>
                   <th>Category</th>
                   <th>Company</th>
-                  <th>Brand</th>
+                  <th>Box Price</th>
                   <th>Price</th>
                   <th>Action</th>
                 </tr>
@@ -546,7 +548,7 @@ const Products = () => {
                             : "No categories"}
                         </td>
                         <td>{item?.company?.name?.en}</td>
-                        <td>{item?.brand?.name?.en || "under development"}</td>
+                        <td>{item?.defaultPriceBox} AED</td>
                         <td>{item?.defaultPrice} AED</td>
                         <td className="actions">
                           <RiDeleteBin6Line

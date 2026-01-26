@@ -10,6 +10,7 @@ import { AiOutlineCloseCircle } from "react-icons/ai";
 import AllOrders from "../../API/Orders/AllOrders";
 import GetOrderDetails from "../../API/Orders/GetOrderDetails";
 import updateOrderStatus from "../../API/Orders/updateOrderStatus";
+import OrderSearch from "../../API/Search/OrderSearch";
 import { BsPatchQuestion } from "react-icons/bs";
 
 const Orders = () => {
@@ -29,6 +30,7 @@ const Orders = () => {
   const [allOrders, setAllOrders] = useState([]);
   const [orderDetails, setOrderDetails] = useState([]);
   const [showBox, setShowBox] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getAllOrders = () => {
     AllOrders(
@@ -70,7 +72,23 @@ const Orders = () => {
   return (
     <div className="orders">
       <div className="Orders_top">
-        <input type="text" placeholder="search" />
+        <input
+          type="text"
+          placeholder="Search orders..."
+          value={searchQuery}
+          onChange={(e) => {
+            const query = e.target.value;
+            setSearchQuery(query);
+            
+            // If input is empty, get all orders with current filter
+            if (query.trim() === "") {
+              getAllOrders();
+            } else {
+              // Search as user types
+              OrderSearch(setAllOrders, setError, setLoading, encodeURIComponent(query.trim()));
+            }
+          }}
+        />
         <button>
           New Order <FaPlus />
         </button>
