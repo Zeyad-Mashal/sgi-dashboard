@@ -69,6 +69,9 @@ const Orders = () => {
     );
   };
 
+  console.log(allOrders);
+  console.log(orderDetails);
+  
   return (
     <div className="orders">
       <div className="Orders_top">
@@ -136,11 +139,11 @@ const Orders = () => {
             <table>
               <thead>
                 <tr>
-                  <th>Order Id</th>
-                  <th>Shipping Id</th>
+                  <th>Customer Name</th>
                   <th>Phone</th>
-                  <th>Order Qn</th>
+                  <th>Items Count</th>
                   <th>Total Price</th>
+                  <th>Order Date</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
@@ -158,6 +161,7 @@ const Orders = () => {
                   </p>
                 ) : (
                   allOrders.map((item) => {
+                    const totalItems = item.cartItems?.reduce((sum, ci) => sum + (ci.quantity || 0), 0) || 0;
                     return (
                       <tr
                         onClick={() => {
@@ -166,29 +170,29 @@ const Orders = () => {
                         }}
                         key={item._id}
                       >
-                        <td>{item._id}</td>
+                        <td>{item.userName || "N/A"}</td>
+                        <td>{item.userPhone || "N/A"}</td>
+                        <td>{totalItems} items</td>
+                        <td>{item.totalAmount || 0} AED</td>
                         <td>
-                          {item.cartItems.map((ci) => (
-                            <p key={ci._id}>{ci.sku}</p>
-                          ))}
+                          {item.orderDate 
+                            ? new Date(item.orderDate).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })
+                            : "N/A"}
                         </td>
-                        <td>{item.userPhone}</td>
-                        <td>
-                          {item.cartItems.map((ci) => (
-                            <p key={ci._id}>{ci.quantity}</p>
-                          ))}
-                        </td>
-                        <td>{item.totalAmount} AED</td>
                         <td
-                          className={`status ${item.orderStatus.toLowerCase()}`}
+                          className={`status ${item.orderStatus?.toLowerCase() || ''}`}
                         >
-                          {item.orderStatus}
+                          {item.orderStatus || "N/A"}
                         </td>
                         <td className="actions">
                           <RiEditLine
                             className="edit_icon"
                             onClick={(e) => {
-                              e.stopPropagation(); // عشان ما يفتحش الـ details box
+                              e.stopPropagation();
                               openStatusModal(item);
                             }}
                           />
@@ -200,53 +204,130 @@ const Orders = () => {
               </tbody>
             </table>
           </div>
-          <div className={`order_box ${showBox ? "show" : ""}`}>
-            <AiOutlineCloseCircle onClick={() => setShowBox(false)} />
-            <h2>Order Details</h2>
-            <div className="order_cotent">
-              <div className="order_title">
-                <h3>{orderDetails?.userName}</h3>
-                <p>{orderDetails?.userPhone}</p>
+      {/* Order Details Modal */}
+      {showBox && (
+        <div className="order_details_modal">
+          <div className="order_details_overlay" onClick={() => setShowBox(false)}></div>
+          <div className="order_details_content">
+            <div className="order_details_header">
+              <h2>Order Details</h2>
+              <AiOutlineCloseCircle 
+                className="close_modal_icon" 
+                onClick={() => setShowBox(false)} 
+              />
+            </div>
+
+            {loading ? (
+              <div className="loading">
+                <p>Loading order details...</p>
+                <span className="loader"></span>
               </div>
-              <div className="delivery_info">
-                <h3>Delivery Information</h3>
-                <p>
-                  <FiPhone /> {orderDetails?.userPhone}
-                </p>
-                <p>
-                  <IoLocationOutline />
-                  {orderDetails?.street}, {orderDetails?.neighborhood},{" "}
-                  {orderDetails?.city}
-                </p>
-              </div>
-              <div className="activity_info">
-                <h3>Activity</h3>
-                <p>
-                  Order date -{" "}
-                  {new Date(orderDetails?.orderDate).toLocaleString()}
-                </p>
-              </div>
-              <div className="Order_quantity">
-                <h3>Order Quantity</h3>
-                <div className="order_list">
-                  {orderDetails?.cartItems?.map((prod) => (
-                    <div className="order_item" key={prod._id}>
-                      <img src={prod?.productId?.picUrls[0]} alt="" />
-                      <div className="item_details">
-                        <h3>{prod.name}</h3>
-                        <p>Quantity: {prod.quantity}</p>
-                        <span>{prod.price} AED</span>
-                      </div>
+            ) : (
+              <div className="order_details_body">
+                {/* Customer Information */}
+                <div className="details_section">
+                  <h3 className="section_title">Customer Information</h3>
+                  <div className="details_grid">
+                    <div className="detail_item">
+                      <span className="detail_label">Name:</span>
+                      <span className="detail_value">{orderDetails?.userName || "N/A"}</span>
                     </div>
-                  ))}
+                    <div className="detail_item">
+                      <span className="detail_label">Phone:</span>
+                      <span className="detail_value">
+                        <FiPhone /> {orderDetails?.userPhone || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery Information */}
+                <div className="details_section">
+                  <h3 className="section_title">Delivery Information</h3>
+                  <div className="details_grid">
+                    <div className="detail_item full_width">
+                      <span className="detail_label">Address:</span>
+                      <span className="detail_value">
+                        <IoLocationOutline />
+                        {orderDetails?.street && `${orderDetails.street}, `}
+                        {orderDetails?.neighborhood && `${orderDetails.neighborhood}, `}
+                        {orderDetails?.city || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Information */}
+                <div className="details_section">
+                  <h3 className="section_title">Order Information</h3>
+                  <div className="details_grid">
+                    <div className="detail_item">
+                      <span className="detail_label">Order Date:</span>
+                      <span className="detail_value">
+                        {orderDetails?.orderDate 
+                          ? new Date(orderDetails.orderDate).toLocaleString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div className="detail_item">
+                      <span className="detail_label">Status:</span>
+                      <span className={`detail_value status_badge ${orderDetails?.orderStatus?.toLowerCase() || ''}`}>
+                        {orderDetails?.orderStatus || "N/A"}
+                      </span>
+                    </div>
+                    <div className="detail_item">
+                      <span className="detail_label">Payment Method:</span>
+                      <span className="detail_value">{orderDetails?.paymentWay || "N/A"}</span>
+                    </div>
+                    <div className="detail_item">
+                      <span className="detail_label">Total Amount:</span>
+                      <span className="detail_value total_amount">{orderDetails?.totalAmount || 0} AED</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                <div className="details_section">
+                  <h3 className="section_title">
+                    Order Items ({orderDetails?.cartItems?.length || 0})
+                  </h3>
+                  <div className="order_items_list">
+                    {orderDetails?.cartItems?.map((prod, index) => (
+                      <div className="order_item_card" key={index}>
+                        <div className="item_image_container">
+                          <img 
+                            src={prod?.productId?.picUrls?.[0] || prod?.picUrls?.[0] || "/placeholder.png"} 
+                            alt={prod?.name || "Product"} 
+                            onError={(e) => {
+                              e.target.src = "/placeholder.png";
+                            }}
+                          />
+                        </div>
+                        <div className="item_info">
+                          <h4 className="item_name">{prod?.name || prod?.productId?.name?.en || "Product Name"}</h4>
+                          <div className="item_details_row">
+                            <span className="item_quantity">Quantity: {prod?.quantity || 0}</span>
+                            <span className="item_price">{prod?.price || 0} AED</span>
+                          </div>
+                          {prod?.sku && (
+                            <span className="item_sku">SKU: {prod.sku}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="Payment_Way">
-                <h3>Payment Way</h3>
-                <p>{orderDetails?.paymentWay}</p>
-              </div>
-            </div>
+            )}
           </div>
+        </div>
+      )}
         </div>
       </div>
       {showStatusModal && (
