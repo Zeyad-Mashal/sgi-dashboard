@@ -7,11 +7,14 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { FiPhone } from "react-icons/fi";
 import { IoLocationOutline } from "react-icons/io5";
 import { AiOutlineCloseCircle } from "react-icons/ai";
+import { HiDownload } from "react-icons/hi";
 import AllOrders from "../../API/Orders/AllOrders";
 import GetOrderDetails from "../../API/Orders/GetOrderDetails";
 import updateOrderStatus from "../../API/Orders/updateOrderStatus";
 import OrderSearch from "../../API/Search/OrderSearch";
 import { BsPatchQuestion } from "react-icons/bs";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType } from "docx";
+import { saveAs } from "file-saver";
 
 const Orders = () => {
   const [currentFilter, setCurrentFilter] = useState("New");
@@ -69,8 +72,242 @@ const Orders = () => {
     );
   };
 
-  console.log(allOrders);
-  console.log(orderDetails);
+  // Export Order Function
+  const exportOrder = async () => {
+    if (!orderDetails) return;
+
+    try {
+      // Prepare data
+      const address = [
+        orderDetails?.street,
+        orderDetails?.neighborhood,
+        orderDetails?.city
+      ].filter(Boolean).join(", ") || "N/A";
+
+      const orderDate = orderDetails?.orderDate 
+        ? new Date(orderDetails.orderDate).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : "N/A";
+
+      // Create document sections
+      const sections = [];
+
+      // Title
+      sections.push(
+        new Paragraph({
+          text: "ORDER DETAILS",
+          heading: HeadingLevel.TITLE,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        })
+      );
+
+      // Customer Information Section
+      sections.push(
+        new Paragraph({
+          text: "CUSTOMER INFORMATION",
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Name: ", bold: true }),
+            new TextRun({ text: orderDetails?.userName || "N/A" }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Phone: ", bold: true }),
+            new TextRun({ text: orderDetails?.userPhone || "N/A" }),
+          ],
+          spacing: { after: 200 },
+        })
+      );
+
+      // Delivery Information Section
+      sections.push(
+        new Paragraph({
+          text: "DELIVERY INFORMATION",
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Address: ", bold: true }),
+            new TextRun({ text: address }),
+          ],
+          spacing: { after: 200 },
+        })
+      );
+
+      // Order Information Section
+      sections.push(
+        new Paragraph({
+          text: "ORDER INFORMATION",
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Order Date: ", bold: true }),
+            new TextRun({ text: orderDate }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Status: ", bold: true }),
+            new TextRun({ text: orderDetails?.orderStatus || "N/A" }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Payment Method: ", bold: true }),
+            new TextRun({ text: orderDetails?.paymentWay || "N/A" }),
+          ],
+          spacing: { after: 200 },
+        })
+      );
+
+      // Order Items Section
+      sections.push(
+        new Paragraph({
+          text: "ORDER ITEMS",
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 200 },
+        })
+      );
+
+      // Create table for order items
+      if (orderDetails?.cartItems && orderDetails.cartItems.length > 0) {
+        const tableRows = [
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [new Paragraph({ text: "Item", bold: true })],
+                width: { size: 10, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [new Paragraph({ text: "Product Name", bold: true })],
+                width: { size: 40, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [new Paragraph({ text: "SKU", bold: true })],
+                width: { size: 20, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [new Paragraph({ text: "Quantity", bold: true })],
+                width: { size: 10, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [new Paragraph({ text: "Price", bold: true })],
+                width: { size: 10, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [new Paragraph({ text: "Subtotal", bold: true })],
+                width: { size: 10, type: WidthType.PERCENTAGE },
+              }),
+            ],
+          }),
+        ];
+
+        orderDetails.cartItems.forEach((item, index) => {
+          const itemTotal = (item?.quantity || 0) * (item?.price || 0);
+          tableRows.push(
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [new Paragraph({ text: `${index + 1}` })],
+                }),
+                new TableCell({
+                  children: [new Paragraph({ text: item?.name || item?.productId?.name?.en || "N/A" })],
+                }),
+                new TableCell({
+                  children: [new Paragraph({ text: item?.sku || "N/A" })],
+                }),
+                new TableCell({
+                  children: [new Paragraph({ text: `${item?.quantity || 0}` })],
+                }),
+                new TableCell({
+                  children: [new Paragraph({ text: `${item?.price || 0} AED` })],
+                }),
+                new TableCell({
+                  children: [new Paragraph({ text: `${itemTotal} AED` })],
+                }),
+              ],
+            })
+          );
+        });
+
+        sections.push(
+          new Table({
+            rows: tableRows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+          })
+        );
+      } else {
+        sections.push(
+          new Paragraph({
+            text: "No items found",
+            spacing: { after: 200 },
+          })
+        );
+      }
+
+      // Total Amount
+      sections.push(
+        new Paragraph({
+          spacing: { before: 400, after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ 
+              text: "TOTAL AMOUNT: ", 
+              bold: true,
+              size: 28,
+            }),
+            new TextRun({ 
+              text: `${orderDetails?.totalAmount || 0} AED`,
+              bold: true,
+              size: 28,
+            }),
+          ],
+          alignment: AlignmentType.RIGHT,
+        })
+      );
+
+      // Create document
+      const doc = new Document({
+        sections: [{
+          children: sections,
+        }],
+      });
+
+      // Generate and download
+      const blob = await Packer.toBlob(doc);
+      
+      // Use customer name as filename
+      const customerName = (orderDetails?.userName || "Order")
+        .replace(/[^a-z0-9]/gi, '_')
+        .toLowerCase()
+        .substring(0, 50);
+      const dateStr = orderDetails?.orderDate 
+        ? new Date(orderDetails.orderDate).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
+      
+      saveAs(blob, `${customerName}_order_${dateStr}.docx`);
+    } catch (error) {
+      console.error("Error exporting order:", error);
+      setError("Failed to export order. Please try again.");
+    }
+  };
   
   return (
     <div className="orders">
@@ -211,10 +448,21 @@ const Orders = () => {
           <div className="order_details_content">
             <div className="order_details_header">
               <h2>Order Details</h2>
-              <AiOutlineCloseCircle 
-                className="close_modal_icon" 
-                onClick={() => setShowBox(false)} 
-              />
+              <div className="header_actions">
+                <button 
+                  className="export_order_btn"
+                  onClick={exportOrder}
+                  disabled={loading || !orderDetails}
+                  title="Export Order"
+                >
+                  <HiDownload />
+                  Export Order
+                </button>
+                <AiOutlineCloseCircle 
+                  className="close_modal_icon" 
+                  onClick={() => setShowBox(false)} 
+                />
+              </div>
             </div>
 
             {loading ? (

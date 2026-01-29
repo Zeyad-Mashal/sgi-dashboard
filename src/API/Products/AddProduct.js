@@ -1,7 +1,7 @@
-const URL = "https://sgi-dy1p.onrender.com/api/v1/product/add";
 const AddProduct = async (data, setError, setLoading, setShowTable, setAddProductModel) => {
     setLoading(true)
     const token = localStorage.getItem("SGI_TOKEN")
+    const URL = "https://sgi-dy1p.onrender.com/api/v1/product/add";
     try {
         const response = await fetch(URL, {
             method: 'POST',

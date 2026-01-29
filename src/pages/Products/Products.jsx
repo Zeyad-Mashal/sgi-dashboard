@@ -28,6 +28,9 @@ const Products = () => {
   // IMAGES (FILES)
   const [mainImage, setMainImage] = useState(null);
   const [galleryImages, setGalleryImages] = useState([]);
+  // Store original product images for update
+  const [originalMainImageUrl, setOriginalMainImageUrl] = useState(null);
+  const [originalGalleryImageUrls, setOriginalGalleryImageUrls] = useState([]);
 
   const handleMainUpload = (e) => {
     const file = e.target.files[0];
@@ -162,6 +165,7 @@ const Products = () => {
 
   const [stockQ, setStockQ] = useState("");
   const [stockStatus, setStockStatus] = useState("");
+  const [isFeatured, setIsFeatured] = useState(false);
 
   // RESET FORM
   const resetForm = () => {
@@ -184,6 +188,8 @@ const Products = () => {
     setStockStatus("");
     setMainImage(null);
     setGalleryImages([]);
+    setOriginalMainImageUrl(null);
+    setOriginalGalleryImageUrls([]);
     setIsEditMode(false);
     setEditingProductId(null);
     setDefaultPriceBox("");
@@ -191,6 +197,7 @@ const Products = () => {
     setSelectedTier("");
     setTierPriceValue("");
     setBoxTierPriceValue("");
+    setIsFeatured(false);
   };
 
   // POPULATE FORM WITH PRODUCT DATA
@@ -282,12 +289,21 @@ const Products = () => {
     setStockQ(product?.stock?.toString() || "");
     setStockStatus(product?.stockStatus || "In Stock");
 
-    // Handle images - set existing images as URLs (not files)
+    // Set featured status - check if product has type=featured
+    setIsFeatured(product?.type === "featured" || product?.featured === true);
+
+    // Handle images - store original image URLs for update
     if (product?.picUrls && product.picUrls.length > 0) {
-      // Store URLs for display, but we'll need to handle file uploads separately
-      setMainImage(null); // Reset to null, user can upload new if needed
+      // Store original main image URL
+      setOriginalMainImageUrl(product.picUrls[0]);
+      // Store original gallery images (all except first)
+      setOriginalGalleryImageUrls(product.picUrls.slice(1) || []);
+      // Reset new uploads
+      setMainImage(null);
       setGalleryImages([]);
     } else {
+      setOriginalMainImageUrl(null);
+      setOriginalGalleryImageUrls([]);
       setMainImage(null);
       setGalleryImages([]);
     }
@@ -349,8 +365,12 @@ const Products = () => {
       missingFields.push("Stock Status");
     }
 
-    // Images - at least main image
-    if (!mainImage) {
+    // Images - at least main image (only required in add mode)
+    if (!isEditMode && !mainImage) {
+      missingFields.push("Product Image (Main Image)");
+    }
+    // In edit mode, require either new image or original image
+    if (isEditMode && !mainImage && !originalMainImageUrl) {
       missingFields.push("Product Image (Main Image)");
     }
 
@@ -411,20 +431,27 @@ const Products = () => {
     data.append("stockQuantity", stockQ);
     data.append("stockStatus", stockStatus);
 
-    // PRICE BOX
-    if (
-      defaultPriceBox !== undefined &&
-      defaultPriceBox !== null &&
-      defaultPriceBox !== ""
-    ) {
-      data.append("defaultPriceBox", defaultPriceBox);
-    }
-    if (
-      piecesNumber !== undefined &&
-      piecesNumber !== null &&
-      piecesNumber !== ""
-    ) {
-      data.append("piecesNumber", piecesNumber);
+    // PRICE BOX - Always send, even if empty (for update mode)
+    if (isEditMode && editingProductId) {
+      // In edit mode, always send these fields
+      data.append("defaultPriceBox", defaultPriceBox || "");
+      data.append("piecesNumber", piecesNumber || "");
+    } else {
+      // In add mode, only send if they have values
+      if (
+        defaultPriceBox !== undefined &&
+        defaultPriceBox !== null &&
+        defaultPriceBox !== ""
+      ) {
+        data.append("defaultPriceBox", defaultPriceBox);
+      }
+      if (
+        piecesNumber !== undefined &&
+        piecesNumber !== null &&
+        piecesNumber !== ""
+      ) {
+        data.append("piecesNumber", piecesNumber);
+      }
     }
 
     // MULTIPLE CATEGORIES
@@ -443,13 +470,53 @@ const Products = () => {
     });
 
     // IMAGES
-    if (mainImage) {
-      data.append("image", mainImage);
+    // In edit mode: send new images if uploaded, otherwise send original image URLs
+    if (isEditMode && editingProductId) {
+      // Send new main image if uploaded
+      if (mainImage && typeof mainImage !== "string") {
+        data.append("image", mainImage);
+      } else if (mainImage && typeof mainImage === "string") {
+        // If it's a string (URL), send it as existing image
+        data.append("existingMainImage", mainImage);
+      } else if (originalMainImageUrl) {
+        // If no new image uploaded, send original image URL
+        data.append("existingMainImage", originalMainImageUrl);
+      }
+
+      // Send new gallery images if uploaded
+      galleryImages.forEach((file) => {
+        if (typeof file !== "string") {
+          data.append("image", file);
+        } else {
+          data.append("existingGalleryImage", file);
+        }
+      });
+
+      // Send original gallery images that weren't replaced
+      originalGalleryImageUrls.forEach((url) => {
+        // Only send if it wasn't replaced by a new image
+        const wasReplaced = galleryImages.some(
+          (img) => typeof img === "string" && img === url
+        );
+        if (!wasReplaced) {
+          data.append("existingGalleryImage", url);
+        }
+      });
+    } else {
+      // Add mode: only send new uploaded images
+      if (mainImage) {
+        data.append("image", mainImage);
+      }
+
+      galleryImages.forEach((file) => {
+        data.append("image", file);
+      });
     }
 
-    galleryImages.forEach((file) => {
-      data.append("image", file);
-    });
+    // FEATURED TYPE - Only add if checkbox is checked
+    if (isFeatured) {
+      data.append("type", "featured");
+    }
 
     // SEND TO API
     if (isEditMode && editingProductId) {
@@ -464,7 +531,8 @@ const Products = () => {
           resetForm();
           // Refresh products list
           GetProducts(setAllProducts, setError, setLoading, currentPage, setPaginationInfo);
-        }
+        },
+        isFeatured
       );
     } else {
       AddProduct(data, setError, setLoading, setShowTable, setAddProductModel);
@@ -1124,7 +1192,11 @@ const Products = () => {
 
               <div className="add_ToFeature_section">
                 <label>
-                  <input type="checkbox" />
+                  <input 
+                    type="checkbox" 
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                  />
                   <span>Highlight this product in a featured section.</span>
                 </label>
               </div>

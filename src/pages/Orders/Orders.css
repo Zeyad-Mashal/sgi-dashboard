@@ -369,6 +369,43 @@
   font-weight: 600;
 }
 
+.header_actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.export_order_btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.export_order_btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.export_order_btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export_order_btn svg {
+  font-size: 1.2rem;
+}
+
 .close_modal_icon {
   font-size: 28px;
   cursor: pointer;

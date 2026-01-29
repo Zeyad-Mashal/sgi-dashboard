@@ -5,7 +5,8 @@ const UpdateProduct = async (
     setLoading,
     setAddProductModel,
     setShowTable,
-    onSuccess
+    onSuccess,
+    isFeatured = false
 ) => {
     setLoading(true);
     const token = localStorage.getItem("SGI_TOKEN");
