@@ -139,6 +139,19 @@ const Products = () => {
     });
   };
 
+  // Remove a specific category (used by the remove button)
+  const removeCategory = (subCategoryId, e) => {
+    // Stop event propagation to prevent triggering other handlers
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setcategories((prev) => {
+      // Filter out only the specific category ID
+      return prev.filter((id) => id !== subCategoryId);
+    });
+  };
+
   const [brand, setBrand] = useState("");
 
   const [tierPrices, settierPrices] = useState([]);
@@ -1123,7 +1136,7 @@ const Products = () => {
                     <div className="selected_categories_summary">
                       <strong>Selected Subcategories ({categories.length}):</strong>
                       <div className="selected_categories_tags">
-                        {categories.map((catId) => {
+                        {categories.map((catId, index) => {
                           // Find the subcategory name and its main category from ALL categories
                           let subCatName = catId;
                           let mainCatName = "";
@@ -1141,12 +1154,12 @@ const Products = () => {
                           });
                           
                           return (
-                            <span key={catId} className="selected_category_tag">
+                            <span key={`${catId}-${index}`} className="selected_category_tag">
                               {mainCatName && <span className="main_cat_label">{mainCatName}: </span>}
                               {subCatName}
                               <button
                                 type="button"
-                                onClick={() => handleSubCategorySelect(catId)}
+                                onClick={(e) => removeCategory(catId, e)}
                                 className="remove_category_btn"
                               >
                                 ×
