@@ -409,6 +409,54 @@
   font-size: 22px;
   color: rgba(106, 113, 127, 1);
   cursor: pointer;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  padding: 2px;
+  transition: all 0.2s;
+}
+
+.gallery_item .delete_icon:hover {
+  color: #e74c3c;
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+.replace_gallery_btn {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #333;
+  transition: all 0.2s;
+}
+
+.replace_gallery_btn:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #4a90e2;
+  color: #4a90e2;
+  transform: scale(1.05);
+}
+
+.existing_image_label {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 2px 6px;
+  font-size: 9px;
+  border-radius: 4px;
+  z-index: 1;
 }
 
 .set_main_btn {
@@ -421,6 +469,7 @@
   border-radius: 6px;
   border: 1px solid #ccc;
   cursor: pointer;
+  z-index: 2;
 }
 
 /* ADD IMAGE BUTTON */

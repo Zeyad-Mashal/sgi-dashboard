@@ -31,6 +31,9 @@ const Products = () => {
   // Store original product images for update
   const [originalMainImageUrl, setOriginalMainImageUrl] = useState(null);
   const [originalGalleryImageUrls, setOriginalGalleryImageUrls] = useState([]);
+  // Track deleted and replaced gallery images in edit mode
+  const [deletedGalleryImageUrls, setDeletedGalleryImageUrls] = useState([]);
+  const [replacedGalleryImages, setReplacedGalleryImages] = useState([]); // {originalUrl: newFile}
 
   const handleMainUpload = (e) => {
     const file = e.target.files[0];
@@ -46,6 +49,37 @@ const Products = () => {
 
   const removeGalleryImage = (img) => {
     setGalleryImages(galleryImages.filter((i) => i !== img));
+  };
+
+  // Remove existing gallery image (in edit mode)
+  const removeExistingGalleryImage = (imgUrl) => {
+    setDeletedGalleryImageUrls((prev) => [...prev, imgUrl]);
+    // Also remove from replaced images if it was being replaced
+    setReplacedGalleryImages((prev) => {
+      const newReplaced = { ...prev };
+      delete newReplaced[imgUrl];
+      return newReplaced;
+    });
+  };
+
+  // Replace existing gallery image (in edit mode)
+  const replaceExistingGalleryImage = (originalUrl, newFile) => {
+    setReplacedGalleryImages((prev) => ({
+      ...prev,
+      [originalUrl]: newFile
+    }));
+    // Remove from deleted list if it was marked for deletion
+    setDeletedGalleryImageUrls((prev) => prev.filter((url) => url !== originalUrl));
+  };
+
+  // Handle file input for replacing existing gallery image
+  const handleReplaceGalleryImage = (originalUrl, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      replaceExistingGalleryImage(originalUrl, file);
+    }
+    // Reset input value to allow selecting the same file again
+    e.target.value = '';
   };
 
   // API DATA
@@ -203,6 +237,8 @@ const Products = () => {
     setGalleryImages([]);
     setOriginalMainImageUrl(null);
     setOriginalGalleryImageUrls([]);
+    setDeletedGalleryImageUrls([]);
+    setReplacedGalleryImages([]);
     setIsEditMode(false);
     setEditingProductId(null);
     setDefaultPriceBox("");
@@ -311,14 +347,18 @@ const Products = () => {
       setOriginalMainImageUrl(product.picUrls[0]);
       // Store original gallery images (all except first)
       setOriginalGalleryImageUrls(product.picUrls.slice(1) || []);
-      // Reset new uploads
+      // Reset new uploads and edit mode states
       setMainImage(null);
       setGalleryImages([]);
+      setDeletedGalleryImageUrls([]);
+      setReplacedGalleryImages([]);
     } else {
       setOriginalMainImageUrl(null);
       setOriginalGalleryImageUrls([]);
       setMainImage(null);
       setGalleryImages([]);
+      setDeletedGalleryImageUrls([]);
+      setReplacedGalleryImages([]);
     }
   };
 
@@ -496,7 +536,7 @@ const Products = () => {
         data.append("existingMainImage", originalMainImageUrl);
       }
 
-      // Send new gallery images if uploaded
+      // Send new gallery images if uploaded (only new files, not replaced ones)
       galleryImages.forEach((file) => {
         if (typeof file !== "string") {
           data.append("image", file);
@@ -505,15 +545,30 @@ const Products = () => {
         }
       });
 
-      // Send original gallery images that weren't replaced
-      originalGalleryImageUrls.forEach((url) => {
-        // Only send if it wasn't replaced by a new image
-        const wasReplaced = galleryImages.some(
-          (img) => typeof img === "string" && img === url
-        );
-        if (!wasReplaced) {
-          data.append("existingGalleryImage", url);
+      // Send replaced gallery images (new files replacing old URLs)
+      Object.entries(replacedGalleryImages).forEach(([originalUrl, newFile]) => {
+        if (newFile) {
+          data.append("image", newFile);
         }
+      });
+
+      // Send original gallery images that weren't deleted or replaced
+      originalGalleryImageUrls.forEach((url) => {
+        // Skip if deleted
+        if (deletedGalleryImageUrls.includes(url)) {
+          return;
+        }
+        // Skip if replaced (replaced images are sent as new files above)
+        if (replacedGalleryImages[url]) {
+          return;
+        }
+        // Send as existing image
+        data.append("existingGalleryImage", url);
+      });
+
+      // Send deleted gallery image URLs (so backend knows to delete them)
+      deletedGalleryImageUrls.forEach((url) => {
+        data.append("deletedGalleryImage", url);
       });
     } else {
       // Add mode: only send new uploaded images
@@ -1015,12 +1070,51 @@ const Products = () => {
                   allProducts
                     .find((p) => p._id === editingProductId)
                     ?.picUrls?.slice(1)
-                    .map((imgUrl, index) => (
-                      <div className="gallery_item" key={`existing-${index}`}>
-                        <img src={imgUrl} alt="gallery" />
-                        <div className="existing_image_label">Existing</div>
-                      </div>
-                    ))}
+                    .filter((imgUrl) => !deletedGalleryImageUrls.includes(imgUrl))
+                    .map((imgUrl, index) => {
+                      // Check if this image was replaced
+                      const isReplaced = replacedGalleryImages[imgUrl];
+                      const displayImage = isReplaced 
+                        ? URL.createObjectURL(isReplaced)
+                        : imgUrl;
+
+                      return (
+                        <div className="gallery_item" key={`existing-${index}`}>
+                          <img src={displayImage} alt="gallery" />
+                          <div className="existing_image_label">
+                            {isReplaced ? "Replaced" : "Existing"}
+                          </div>
+
+                          {/* Delete button */}
+                          <IoIosCloseCircleOutline
+                            className="delete_icon"
+                            onClick={() => removeExistingGalleryImage(imgUrl)}
+                            title="Delete image"
+                          />
+
+                          {/* Replace button */}
+                          <label className="replace_gallery_btn" title="Replace image">
+                            <GrPowerCycle />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleReplaceGalleryImage(imgUrl, e)}
+                              hidden
+                            />
+                          </label>
+
+                          {/* Set as main button (only for replaced images) */}
+                          {isReplaced && (
+                            <button
+                              className="set_main_btn"
+                              onClick={() => setMainImage(isReplaced)}
+                            >
+                              Set as Main
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
 
                 {/* Show new uploaded gallery images */}
                 {galleryImages.map((img, index) => (
