@@ -743,6 +743,11 @@
   font-size: 0.9rem;
 }
 
+.selected_category_tag.main_category_tag {
+  background-color: #28a745;
+  font-weight: 500;
+}
+
 .main_cat_label {
   font-weight: 600;
   opacity: 0.9;

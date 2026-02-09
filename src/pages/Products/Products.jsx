@@ -138,9 +138,10 @@ const Products = () => {
   const [company, setcompany] = useState("");
   const [defaultPriceBox, setDefaultPriceBox] = useState();
   const [piecesNumber, setPiecesNumber] = useState();
-  // MULTIPLE CATEGORIES (subcategories)
+  // MULTIPLE CATEGORIES (subcategories and main categories)
   const [categories, setcategories] = useState([]);
   const [expandedMainCategories, setExpandedMainCategories] = useState([]);
+  const [selectedMainCategory, setSelectedMainCategory] = useState("");
 
   // Toggle main category expansion to show/hide subcategories
   const toggleMainCategory = (categoryId, e) => {
@@ -173,8 +174,26 @@ const Products = () => {
     });
   };
 
+  // Handle main category selection from dropdown
+  const handleMainCategorySelect = (mainCategoryId) => {
+    if (!mainCategoryId) return;
+    
+    setcategories((prev) => {
+      // Check if already selected
+      if (prev.includes(mainCategoryId)) {
+        return prev; // Already selected, don't add again
+      } else {
+        // Add main category ID to categories array
+        return [...prev, mainCategoryId];
+      }
+    });
+    
+    // Reset select after adding
+    setSelectedMainCategory("");
+  };
+
   // Remove a specific category (used by the remove button)
-  const removeCategory = (subCategoryId, e) => {
+  const removeCategory = (categoryId, e) => {
     // Stop event propagation to prevent triggering other handlers
     if (e) {
       e.preventDefault();
@@ -182,7 +201,7 @@ const Products = () => {
     }
     setcategories((prev) => {
       // Filter out only the specific category ID
-      return prev.filter((id) => id !== subCategoryId);
+      return prev.filter((id) => id !== categoryId);
     });
   };
 
@@ -230,6 +249,7 @@ const Products = () => {
     setBrand("");
     setcategories([]);
     setExpandedMainCategories([]);
+    setSelectedMainCategory("");
     settierPrices([]);
     setStockQ("");
     setStockStatus("");
@@ -295,23 +315,40 @@ const Products = () => {
         : ""
     );
 
-    // Set categories (subcategories only) - don't auto-expand main categories
+    // Set categories (both main categories and subcategories)
     if (product?.categories && Array.isArray(product.categories)) {
       // Extract category IDs (could be main or sub categories)
       const categoryIds = product.categories.map((cat) => cat._id || cat);
-      // Only store subcategory IDs, filter out main category IDs
+      
+      // Separate main categories and subcategories
+      const mainCategoryIds = [];
       const subCategoryIds = [];
-      allCategories.forEach((mainCat) => {
-        if (mainCat.subCategories && Array.isArray(mainCat.subCategories)) {
-          mainCat.subCategories.forEach((subCat) => {
-            const subCatId = subCat._id || subCat;
-            if (categoryIds.includes(subCatId)) {
-              subCategoryIds.push(subCatId);
+      
+      // Get all main category IDs
+      const allMainCategoryIds = allCategories.map((mainCat) => mainCat._id || mainCat);
+      
+      // Check each category ID
+      categoryIds.forEach((catId) => {
+        // Check if it's a main category
+        if (allMainCategoryIds.includes(catId)) {
+          mainCategoryIds.push(catId);
+        } else {
+          // Check if it's a subcategory
+          allCategories.forEach((mainCat) => {
+            if (mainCat.subCategories && Array.isArray(mainCat.subCategories)) {
+              mainCat.subCategories.forEach((subCat) => {
+                const subCatId = subCat._id || subCat;
+                if (subCatId === catId && !subCategoryIds.includes(subCatId)) {
+                  subCategoryIds.push(subCatId);
+                }
+              });
             }
           });
         }
       });
-      setcategories(subCategoryIds);
+      
+      // Combine main and sub categories
+      setcategories([...mainCategoryIds, ...subCategoryIds]);
       // Don't auto-expand - let user manually expand if needed
       setExpandedMainCategories([]);
     } else {
@@ -1165,7 +1202,44 @@ const Products = () => {
               </div>
               <div className="add_product_right_inputs">
                 <label>
-                  <span>Product Categories (Select Subcategories)</span>
+                  <span>Product Categories</span>
+                  
+                  {/* Main Categories Select */}
+                  <div style={{ marginBottom: "15px" }}>
+                    <label style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}>
+                      Add Main Category:
+                    </label>
+                    <select
+                      value={selectedMainCategory}
+                      onChange={(e) => handleMainCategorySelect(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        border: "1px solid #ddd",
+                        fontSize: "14px"
+                      }}
+                    >
+                      <option value="">Choose Main Category</option>
+                      {allCategories.map((mainCat) => {
+                        const isAlreadySelected = categories.includes(mainCat._id);
+                        return (
+                          <option
+                            key={mainCat._id}
+                            value={mainCat._id}
+                            disabled={isAlreadySelected}
+                          >
+                            {mainCat.name?.en || mainCat.name?.ar || "Category"}
+                            {isAlreadySelected ? " (Already Selected)" : ""}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: "15px", fontSize: "14px", color: "#666" }}>
+                    <strong>Or select subcategories below:</strong>
+                  </div>
 
                   <div className="categories_hierarchical_list">
                     {allCategories.map((mainCat) => {
@@ -1225,41 +1299,63 @@ const Products = () => {
                     })}
                   </div>
 
-                  {/* Show ALL selected subcategories from ALL main categories */}
+                  {/* Show ALL selected categories (main categories and subcategories) */}
                   {categories.length > 0 && (
                     <div className="selected_categories_summary">
-                      <strong>Selected Subcategories ({categories.length}):</strong>
+                      <strong>Selected Categories ({categories.length}):</strong>
                       <div className="selected_categories_tags">
                         {categories.map((catId, index) => {
-                          // Find the subcategory name and its main category from ALL categories
-                          let subCatName = catId;
-                          let mainCatName = "";
-                          
-                          allCategories.forEach((mainCat) => {
-                            if (mainCat.subCategories && Array.isArray(mainCat.subCategories)) {
-                              const subCat = mainCat.subCategories.find(
-                                (sc) => (sc._id || sc) === catId
-                              );
-                              if (subCat) {
-                                subCatName = subCat.name?.en || subCat.name?.ar || catId;
-                                mainCatName = mainCat.name?.en || mainCat.name?.ar || "";
-                              }
-                            }
-                          });
-                          
-                          return (
-                            <span key={`${catId}-${index}`} className="selected_category_tag">
-                              {mainCatName && <span className="main_cat_label">{mainCatName}: </span>}
-                              {subCatName}
-                              <button
-                                type="button"
-                                onClick={(e) => removeCategory(catId, e)}
-                                className="remove_category_btn"
-                              >
-                                ×
-                              </button>
-                            </span>
+                          // Check if it's a main category
+                          const mainCategory = allCategories.find(
+                            (mainCat) => (mainCat._id || mainCat) === catId
                           );
+                          
+                          if (mainCategory) {
+                            // It's a main category
+                            return (
+                              <span key={`${catId}-${index}`} className="selected_category_tag main_category_tag">
+                                <span className="main_cat_label">Main: </span>
+                                {mainCategory.name?.en || mainCategory.name?.ar || catId}
+                                <button
+                                  type="button"
+                                  onClick={(e) => removeCategory(catId, e)}
+                                  className="remove_category_btn"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            );
+                          } else {
+                            // It's a subcategory - find its name and main category
+                            let subCatName = catId;
+                            let mainCatName = "";
+                            
+                            allCategories.forEach((mainCat) => {
+                              if (mainCat.subCategories && Array.isArray(mainCat.subCategories)) {
+                                const subCat = mainCat.subCategories.find(
+                                  (sc) => (sc._id || sc) === catId
+                                );
+                                if (subCat) {
+                                  subCatName = subCat.name?.en || subCat.name?.ar || catId;
+                                  mainCatName = mainCat.name?.en || mainCat.name?.ar || "";
+                                }
+                              }
+                            });
+                            
+                            return (
+                              <span key={`${catId}-${index}`} className="selected_category_tag">
+                                {mainCatName && <span className="main_cat_label">{mainCatName}: </span>}
+                                {subCatName}
+                                <button
+                                  type="button"
+                                  onClick={(e) => removeCategory(catId, e)}
+                                  className="remove_category_btn"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            );
+                          }
                         })}
                       </div>
                     </div>
