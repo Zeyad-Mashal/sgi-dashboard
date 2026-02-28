@@ -422,6 +422,29 @@
   transform: scale(1.1);
 }
 
+.gallery_item .edit_gallery_icon {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  font-size: 17px;
+  color: rgba(106, 113, 127, 1);
+  cursor: pointer;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.gallery_item .edit_gallery_icon:hover {
+  color: #1d7af3;
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
 .replace_gallery_btn {
   position: absolute;
   top: 5px;

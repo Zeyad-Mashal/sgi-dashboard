@@ -51,6 +51,13 @@ const Products = () => {
     setGalleryImages(galleryImages.filter((i) => i !== img));
   };
 
+  // Replace (edit) a new gallery image at index
+  const replaceNewGalleryImage = (index, newFile) => {
+    setGalleryImages((prev) =>
+      prev.map((img, i) => (i === index ? newFile : img))
+    );
+  };
+
   // Remove existing gallery image (in edit mode)
   const removeExistingGalleryImage = (imgUrl) => {
     setDeletedGalleryImageUrls((prev) => [...prev, imgUrl]);
@@ -1129,9 +1136,9 @@ const Products = () => {
                             title="Delete image"
                           />
 
-                          {/* Replace button */}
-                          <label className="replace_gallery_btn" title="Replace image">
-                            <GrPowerCycle />
+                          {/* Edit button (replace image) - left side */}
+                          <label className="edit_gallery_icon" title="Edit image">
+                            <RiEditLine />
                             <input
                               type="file"
                               accept="image/*"
@@ -1161,7 +1168,22 @@ const Products = () => {
                     <IoIosCloseCircleOutline
                       className="delete_icon"
                       onClick={() => removeGalleryImage(img)}
+                      title="Delete image"
                     />
+
+                    <label className="edit_gallery_icon" title="Edit image">
+                      <RiEditLine />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) replaceNewGalleryImage(index, file);
+                          e.target.value = "";
+                        }}
+                        hidden
+                      />
+                    </label>
 
                     <button
                       className="set_main_btn"
