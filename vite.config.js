@@ -8,4 +8,15 @@ export default defineConfig({
   plugins: [react(),
   tailwindcss(),
   ],
+  server: {
+    proxy: {
+      // في التطوير: الطلبات لـ /api/odoo تذهب لـ Odoo (تجنب CORS)
+      '/api/odoo': {
+        target: 'https://sgicompany.odoo.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/odoo/, '/api'),
+        secure: true,
+      },
+    },
+  },
 })

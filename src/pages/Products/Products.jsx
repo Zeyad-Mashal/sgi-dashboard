@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa6";
 import { RiEditLine } from "react-icons/ri";
 import { RiDeleteBin6Line } from "react-icons/ri";
-import p1d from "../../assets/p1d.jpg";
 import { IoIosCloseCircleOutline } from "react-icons/io";
 import { GrPowerCycle } from "react-icons/gr";
 import { IoReturnUpBack } from "react-icons/io5";
@@ -17,6 +16,7 @@ import GetProducts from "../../API/Products/GetProducts";
 import UpdateProduct from "../../API/Products/UpdateProduct";
 import DeleteProduct from "../../API/Products/DeleteProduct";
 import ProductSearch from "../../API/Search/ProductSearch";
+import GetProductStock from "../../API/Products/GetProductStock";
 const Products = () => {
   const [showTable, setShowTable] = useState(true);
   const [AddProductModel, setAddProductModel] = useState(false);
@@ -24,7 +24,7 @@ const Products = () => {
   const [editingProductId, setEditingProductId] = useState(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteProduct, setDeleteProduct] = useState(null);
-
+  const [productStock, setProductStock] = useState([]);
   // IMAGES (FILES)
   const [mainImage, setMainImage] = useState(null);
   const [galleryImages, setGalleryImages] = useState([]);
@@ -54,7 +54,7 @@ const Products = () => {
   // Replace (edit) a new gallery image at index
   const replaceNewGalleryImage = (index, newFile) => {
     setGalleryImages((prev) =>
-      prev.map((img, i) => (i === index ? newFile : img))
+      prev.map((img, i) => (i === index ? newFile : img)),
     );
   };
 
@@ -73,10 +73,12 @@ const Products = () => {
   const replaceExistingGalleryImage = (originalUrl, newFile) => {
     setReplacedGalleryImages((prev) => ({
       ...prev,
-      [originalUrl]: newFile
+      [originalUrl]: newFile,
     }));
     // Remove from deleted list if it was marked for deletion
-    setDeletedGalleryImageUrls((prev) => prev.filter((url) => url !== originalUrl));
+    setDeletedGalleryImageUrls((prev) =>
+      prev.filter((url) => url !== originalUrl),
+    );
   };
 
   // Handle file input for replacing existing gallery image
@@ -86,7 +88,7 @@ const Products = () => {
       replaceExistingGalleryImage(originalUrl, file);
     }
     // Reset input value to allow selecting the same file again
-    e.target.value = '';
+    e.target.value = "";
   };
 
   // API DATA
@@ -101,7 +103,7 @@ const Products = () => {
     totalPages: null,
     totalProducts: null,
     hasNextPage: false,
-    hasPrevPage: false
+    hasPrevPage: false,
   });
 
   useEffect(() => {
@@ -109,7 +111,14 @@ const Products = () => {
     getAllCompanies();
     getAllBrands();
     getAllCategories();
-    GetProducts(setAllProducts, setError, setLoading, currentPage, setPaginationInfo);
+    GetProducts(
+      setAllProducts,
+      setError,
+      setLoading,
+      currentPage,
+      setPaginationInfo,
+    );
+    GetProductStock(setProductStock, setError, setLoading);
   }, [currentPage]);
 
   const getAllTier = () => {
@@ -160,7 +169,7 @@ const Products = () => {
     setExpandedMainCategories((prev) =>
       prev.includes(categoryId)
         ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
+        : [...prev, categoryId],
     );
   };
 
@@ -184,7 +193,7 @@ const Products = () => {
   // Handle main category selection from dropdown
   const handleMainCategorySelect = (mainCategoryId) => {
     if (!mainCategoryId) return;
-    
+
     setcategories((prev) => {
       // Check if already selected
       if (prev.includes(mainCategoryId)) {
@@ -194,7 +203,7 @@ const Products = () => {
         return [...prev, mainCategoryId];
       }
     });
-    
+
     // Reset select after adding
     setSelectedMainCategory("");
   };
@@ -287,8 +296,8 @@ const Products = () => {
       product?.defaultPrice !== undefined && product?.defaultPrice !== null
         ? product.defaultPrice.toString()
         : product?.price !== undefined && product?.price !== null
-        ? product.price.toString()
-        : ""
+          ? product.price.toString()
+          : "",
     );
     setcode(product?.code || "");
     setArUses(product?.uses?.ar || "");
@@ -308,9 +317,9 @@ const Products = () => {
         priceBoxValue !== 0 &&
         priceBoxValue !== "0"
         ? priceBoxValue.toString()
-        : ""
+        : "",
     );
-    
+
     const piecesValue = product?.piecesNumber;
     setPiecesNumber(
       piecesValue !== undefined &&
@@ -319,21 +328,23 @@ const Products = () => {
         piecesValue !== 0 &&
         piecesValue !== "0"
         ? piecesValue.toString()
-        : ""
+        : "",
     );
 
     // Set categories (both main categories and subcategories)
     if (product?.categories && Array.isArray(product.categories)) {
       // Extract category IDs (could be main or sub categories)
       const categoryIds = product.categories.map((cat) => cat._id || cat);
-      
+
       // Separate main categories and subcategories
       const mainCategoryIds = [];
       const subCategoryIds = [];
-      
+
       // Get all main category IDs
-      const allMainCategoryIds = allCategories.map((mainCat) => mainCat._id || mainCat);
-      
+      const allMainCategoryIds = allCategories.map(
+        (mainCat) => mainCat._id || mainCat,
+      );
+
       // Check each category ID
       categoryIds.forEach((catId) => {
         // Check if it's a main category
@@ -353,7 +364,7 @@ const Products = () => {
           });
         }
       });
-      
+
       // Combine main and sub categories
       setcategories([...mainCategoryIds, ...subCategoryIds]);
       // Don't auto-expand - let user manually expand if needed
@@ -590,11 +601,13 @@ const Products = () => {
       });
 
       // Send replaced gallery images (new files replacing old URLs)
-      Object.entries(replacedGalleryImages).forEach(([originalUrl, newFile]) => {
-        if (newFile) {
-          data.append("image", newFile);
-        }
-      });
+      Object.entries(replacedGalleryImages).forEach(
+        ([originalUrl, newFile]) => {
+          if (newFile) {
+            data.append("image", newFile);
+          }
+        },
+      );
 
       // Send original gallery images that weren't deleted or replaced
       originalGalleryImageUrls.forEach((url) => {
@@ -642,17 +655,22 @@ const Products = () => {
         () => {
           resetForm();
           // Refresh products list
-          GetProducts(setAllProducts, setError, setLoading, currentPage, setPaginationInfo);
+          GetProducts(
+            setAllProducts,
+            setError,
+            setLoading,
+            currentPage,
+            setPaginationInfo,
+          );
         },
-        isFeatured
+        isFeatured,
       );
     } else {
       AddProduct(data, setError, setLoading, setShowTable, setAddProductModel);
       resetForm();
     }
   };
-  console.log(allProducts);
-  
+  console.log(productStock);
 
   return (
     <div className="products">
@@ -666,14 +684,25 @@ const Products = () => {
               onChange={(e) => {
                 const query = e.target.value;
                 setSearchQuery(query);
-                
+
                 // If input is empty, get all products
                 if (query.trim() === "") {
                   setCurrentPage(1); // Reset to page 1 when clearing search
-                  GetProducts(setAllProducts, setError, setLoading, 1, setPaginationInfo);
+                  GetProducts(
+                    setAllProducts,
+                    setError,
+                    setLoading,
+                    1,
+                    setPaginationInfo,
+                  );
                 } else {
                   // Search as user types
-                  ProductSearch(setAllProducts, setError, setLoading, encodeURIComponent(query.trim()));
+                  ProductSearch(
+                    setAllProducts,
+                    setError,
+                    setLoading,
+                    encodeURIComponent(query.trim()),
+                  );
                 }
               }}
             />
@@ -706,7 +735,10 @@ const Products = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: "center", padding: "40px" }}>
+                    <td
+                      colSpan="8"
+                      style={{ textAlign: "center", padding: "40px" }}
+                    >
                       <div className="loading">
                         <p>Searching products...</p>
                         <span className="loader"></span>
@@ -723,8 +755,15 @@ const Products = () => {
                         <td>{item?.name?.en}</td>
                         <td>{item?.code}</td>
                         <td>
-                          {item?.categories && Array.isArray(item.categories) && item.categories.length > 0
-                            ? item.categories.map((cat) => cat?.name?.en || cat?.name?.ar || "N/A").join(", ")
+                          {item?.categories &&
+                          Array.isArray(item.categories) &&
+                          item.categories.length > 0
+                            ? item.categories
+                                .map(
+                                  (cat) =>
+                                    cat?.name?.en || cat?.name?.ar || "N/A",
+                                )
+                                .join(", ")
                             : "No categories"}
                         </td>
                         <td>{item?.company?.name?.en}</td>
@@ -748,7 +787,10 @@ const Products = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: "center", padding: "40px" }}>
+                    <td
+                      colSpan="8"
+                      style={{ textAlign: "center", padding: "40px" }}
+                    >
                       <p>No products found</p>
                     </td>
                   </tr>
@@ -771,7 +813,7 @@ const Products = () => {
               >
                 Previous
               </button>
-              
+
               <div className="pagination_info">
                 <span>Page {paginationInfo.currentPage || currentPage}</span>
                 {paginationInfo.totalPages && (
@@ -807,7 +849,13 @@ const Products = () => {
                 // Clear search and reload all products
                 setSearchQuery("");
                 setCurrentPage(1);
-                GetProducts(setAllProducts, setError, setLoading, 1, setPaginationInfo);
+                GetProducts(
+                  setAllProducts,
+                  setError,
+                  setLoading,
+                  1,
+                  setPaginationInfo,
+                );
               }}
               className="returnToProducts"
             >
@@ -993,7 +1041,7 @@ const Products = () => {
                             className="tier_remove"
                             onClick={() =>
                               settierPrices(
-                                tierPrices.filter((_, i) => i !== index)
+                                tierPrices.filter((_, i) => i !== index),
                               )
                             }
                           />
@@ -1041,8 +1089,8 @@ const Products = () => {
                       ? "Updating ..."
                       : "Publishing ..."
                     : isEditMode
-                    ? "Update Product"
-                    : "Publish Product"}
+                      ? "Update Product"
+                      : "Publish Product"}
                 </button>
                 {error && <div className="error_message">{error}</div>}
               </div>
@@ -1114,11 +1162,13 @@ const Products = () => {
                   allProducts
                     .find((p) => p._id === editingProductId)
                     ?.picUrls?.slice(1)
-                    .filter((imgUrl) => !deletedGalleryImageUrls.includes(imgUrl))
+                    .filter(
+                      (imgUrl) => !deletedGalleryImageUrls.includes(imgUrl),
+                    )
                     .map((imgUrl, index) => {
                       // Check if this image was replaced
                       const isReplaced = replacedGalleryImages[imgUrl];
-                      const displayImage = isReplaced 
+                      const displayImage = isReplaced
                         ? URL.createObjectURL(isReplaced)
                         : imgUrl;
 
@@ -1137,12 +1187,17 @@ const Products = () => {
                           />
 
                           {/* Edit button (replace image) - left side */}
-                          <label className="edit_gallery_icon" title="Edit image">
+                          <label
+                            className="edit_gallery_icon"
+                            title="Edit image"
+                          >
                             <RiEditLine />
                             <input
                               type="file"
                               accept="image/*"
-                              onChange={(e) => handleReplaceGalleryImage(imgUrl, e)}
+                              onChange={(e) =>
+                                handleReplaceGalleryImage(imgUrl, e)
+                              }
                               hidden
                             />
                           </label>
@@ -1225,10 +1280,16 @@ const Products = () => {
               <div className="add_product_right_inputs">
                 <label>
                   <span>Product Categories</span>
-                  
+
                   {/* Main Categories Select */}
                   <div style={{ marginBottom: "15px" }}>
-                    <label style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontWeight: "500",
+                      }}
+                    >
                       Add Main Category:
                     </label>
                     <select
@@ -1239,12 +1300,14 @@ const Products = () => {
                         padding: "10px",
                         borderRadius: "8px",
                         border: "1px solid #ddd",
-                        fontSize: "14px"
+                        fontSize: "14px",
                       }}
                     >
                       <option value="">Choose Main Category</option>
                       {allCategories.map((mainCat) => {
-                        const isAlreadySelected = categories.includes(mainCat._id);
+                        const isAlreadySelected = categories.includes(
+                          mainCat._id,
+                        );
                         return (
                           <option
                             key={mainCat._id}
@@ -1259,24 +1322,37 @@ const Products = () => {
                     </select>
                   </div>
 
-                  <div style={{ marginBottom: "15px", fontSize: "14px", color: "#666" }}>
+                  <div
+                    style={{
+                      marginBottom: "15px",
+                      fontSize: "14px",
+                      color: "#666",
+                    }}
+                  >
                     <strong>Or select subcategories below:</strong>
                   </div>
 
                   <div className="categories_hierarchical_list">
                     {allCategories.map((mainCat) => {
-                      const isExpanded = expandedMainCategories.includes(mainCat._id);
+                      const isExpanded = expandedMainCategories.includes(
+                        mainCat._id,
+                      );
                       const subCategories = mainCat.subCategories || [];
                       const hasSubCategories = subCategories.length > 0;
 
                       return (
                         <div key={mainCat._id} className="main_category_item">
                           <div
-                            className={`main_category_header ${hasSubCategories ? 'clickable' : ''}`}
-                            onClick={(e) => hasSubCategories && toggleMainCategory(mainCat._id, e)}
+                            className={`main_category_header ${hasSubCategories ? "clickable" : ""}`}
+                            onClick={(e) =>
+                              hasSubCategories &&
+                              toggleMainCategory(mainCat._id, e)
+                            }
                           >
                             <span className="main_category_name">
-                              {mainCat.name?.en || mainCat.name?.ar || "Category"}
+                              {mainCat.name?.en ||
+                                mainCat.name?.ar ||
+                                "Category"}
                             </span>
                             {hasSubCategories && (
                               <span className="expand_icon">
@@ -1284,7 +1360,9 @@ const Products = () => {
                               </span>
                             )}
                             {!hasSubCategories && (
-                              <span className="no_subcategories">(No subcategories)</span>
+                              <span className="no_subcategories">
+                                (No subcategories)
+                              </span>
                             )}
                           </div>
 
@@ -1292,23 +1370,35 @@ const Products = () => {
                             <div className="subcategories_list">
                               {subCategories.map((subCat) => {
                                 const subCatId = subCat._id || subCat;
-                                const isSelected = categories.includes(subCatId);
-                                
+                                const isSelected =
+                                  categories.includes(subCatId);
+
                                 return (
                                   <div
                                     key={subCatId}
                                     className="subcategory_checkbox_item"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', width: '100%' }}>
+                                    <label
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        cursor: "pointer",
+                                        width: "100%",
+                                      }}
+                                    >
                                       <input
                                         type="checkbox"
                                         checked={isSelected}
-                                        onChange={(e) => handleSubCategorySelect(subCatId, e)}
+                                        onChange={(e) =>
+                                          handleSubCategorySelect(subCatId, e)
+                                        }
                                         onClick={(e) => e.stopPropagation()}
                                       />
                                       <span>
-                                        {subCat.name?.en || subCat.name?.ar || "Subcategory"}
+                                        {subCat.name?.en ||
+                                          subCat.name?.ar ||
+                                          "Subcategory"}
                                       </span>
                                     </label>
                                   </div>
@@ -1324,20 +1414,27 @@ const Products = () => {
                   {/* Show ALL selected categories (main categories and subcategories) */}
                   {categories.length > 0 && (
                     <div className="selected_categories_summary">
-                      <strong>Selected Categories ({categories.length}):</strong>
+                      <strong>
+                        Selected Categories ({categories.length}):
+                      </strong>
                       <div className="selected_categories_tags">
                         {categories.map((catId, index) => {
                           // Check if it's a main category
                           const mainCategory = allCategories.find(
-                            (mainCat) => (mainCat._id || mainCat) === catId
+                            (mainCat) => (mainCat._id || mainCat) === catId,
                           );
-                          
+
                           if (mainCategory) {
                             // It's a main category
                             return (
-                              <span key={`${catId}-${index}`} className="selected_category_tag main_category_tag">
+                              <span
+                                key={`${catId}-${index}`}
+                                className="selected_category_tag main_category_tag"
+                              >
                                 <span className="main_cat_label">Main: </span>
-                                {mainCategory.name?.en || mainCategory.name?.ar || catId}
+                                {mainCategory.name?.en ||
+                                  mainCategory.name?.ar ||
+                                  catId}
                                 <button
                                   type="button"
                                   onClick={(e) => removeCategory(catId, e)}
@@ -1351,22 +1448,34 @@ const Products = () => {
                             // It's a subcategory - find its name and main category
                             let subCatName = catId;
                             let mainCatName = "";
-                            
+
                             allCategories.forEach((mainCat) => {
-                              if (mainCat.subCategories && Array.isArray(mainCat.subCategories)) {
+                              if (
+                                mainCat.subCategories &&
+                                Array.isArray(mainCat.subCategories)
+                              ) {
                                 const subCat = mainCat.subCategories.find(
-                                  (sc) => (sc._id || sc) === catId
+                                  (sc) => (sc._id || sc) === catId,
                                 );
                                 if (subCat) {
-                                  subCatName = subCat.name?.en || subCat.name?.ar || catId;
-                                  mainCatName = mainCat.name?.en || mainCat.name?.ar || "";
+                                  subCatName =
+                                    subCat.name?.en || subCat.name?.ar || catId;
+                                  mainCatName =
+                                    mainCat.name?.en || mainCat.name?.ar || "";
                                 }
                               }
                             });
-                            
+
                             return (
-                              <span key={`${catId}-${index}`} className="selected_category_tag">
-                                {mainCatName && <span className="main_cat_label">{mainCatName}: </span>}
+                              <span
+                                key={`${catId}-${index}`}
+                                className="selected_category_tag"
+                              >
+                                {mainCatName && (
+                                  <span className="main_cat_label">
+                                    {mainCatName}:{" "}
+                                  </span>
+                                )}
                                 {subCatName}
                                 <button
                                   type="button"
@@ -1417,8 +1526,8 @@ const Products = () => {
 
               <div className="add_ToFeature_section">
                 <label>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={isFeatured}
                     onChange={(e) => setIsFeatured(e.target.checked)}
                   />
@@ -1484,7 +1593,14 @@ const Products = () => {
                       setError,
                       setLoading,
                       setOpenDeleteModal,
-                      () => GetProducts(setAllProducts, setError, setLoading, currentPage, setPaginationInfo)
+                      () =>
+                        GetProducts(
+                          setAllProducts,
+                          setError,
+                          setLoading,
+                          currentPage,
+                          setPaginationInfo,
+                        ),
                     );
                   }}
                 >
