@@ -1,38 +1,62 @@
-const ODOO_BASE = "https://sgicompany.odoo.com/api";
+const ODOO_URL = "https://sgicompany.odoo.com/api/products";
 
-export default async function handler(req, res) {
-  // CORS: اسمح للدومين الخاص بالداشبورد
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-API-KEY");
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, X-API-KEY",
+    },
+  });
+}
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "GET") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
-
+export async function GET() {
   const apiKey = process.env.ODOO_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({
-      message: "ODOO_API_KEY is not set in Vercel environment variables",
-    });
+    return jsonResponse(
+      { message: "ODOO_API_KEY is not set in Vercel environment variables" },
+      500
+    );
   }
 
   try {
-    const response = await fetch(`${ODOO_BASE}/products`, {
+    const response = await fetch(ODOO_URL, {
       method: "GET",
       headers: {
         "X-API-KEY": apiKey,
       },
     });
 
-    const data = await response.json();
-    res.status(response.status).json(data);
+    const text = await response.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { message: text || "Invalid response from Odoo" };
+    }
+
+    return jsonResponse(data, response.status);
   } catch (error) {
-    console.error("Odoo proxy error:", error);
-    res.status(502).json({ message: "Failed to fetch from Odoo", error: String(error.message) });
+    return jsonResponse(
+      {
+        message: "Failed to fetch from Odoo",
+        error: error?.message || String(error),
+      },
+      502
+    );
   }
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, X-API-KEY",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
 }
