@@ -670,7 +670,6 @@ const Products = () => {
       resetForm();
     }
   };
-  console.log(productStock);
 
   return (
     <div className="products">
@@ -728,6 +727,7 @@ const Products = () => {
                   <th>Company</th>
                   <th>Box Price</th>
                   <th>Price</th>
+                  <th>Stock (Odoo)</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -736,7 +736,7 @@ const Products = () => {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan="8"
+                      colSpan="9"
                       style={{ textAlign: "center", padding: "40px" }}
                     >
                       <div className="loading">
@@ -747,6 +747,16 @@ const Products = () => {
                   </tr>
                 ) : allProducts.length > 0 ? (
                   allProducts.map((item) => {
+                    const productCode = item?.code != null ? String(item.code).trim() : "";
+                    const odooStock = Array.isArray(productStock)
+                      ? productStock.find(
+                          (s) =>
+                            s?.internal_reference != null &&
+                            String(s.internal_reference).trim() === productCode
+                        )
+                      : null;
+                    const quantityAvailable = odooStock?.quantity_available ?? odooStock?.qty_available ?? "—";
+
                     return (
                       <tr key={item._id}>
                         <td className="product_image">
@@ -769,6 +779,7 @@ const Products = () => {
                         <td>{item?.company?.name?.en}</td>
                         <td>{item?.defaultPriceBox} AED</td>
                         <td>{item?.defaultPrice} AED</td>
+                        <td>{quantityAvailable}</td>
                         <td className="actions">
                           <RiDeleteBin6Line
                             className="delete_icon"
@@ -788,7 +799,7 @@ const Products = () => {
                 ) : (
                   <tr>
                     <td
-                      colSpan="8"
+                      colSpan="9"
                       style={{ textAlign: "center", padding: "40px" }}
                     >
                       <p>No products found</p>
