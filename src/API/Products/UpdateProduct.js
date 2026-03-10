@@ -1,3 +1,8 @@
+/**
+ * تحديث المنتج — body = FormData يحتوي كل بيانات المنتج.
+ * الصور: يُرسل picUrls (JSON + picUrls[]) للقائمة الكاملة للصور الحالية، و image للملفات الجديدة فقط.
+ * الباك إند يجب أن يدمج: product.picUrls = [...قيمة picUrls المرسلة, ...روابط الملفات المرفوعة الجديدة].
+ */
 const UpdateProduct = async (
     id,
     data,

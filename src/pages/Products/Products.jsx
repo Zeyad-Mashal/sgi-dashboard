@@ -513,39 +513,54 @@ const Products = () => {
       return; // Stop submission
     }
 
+    // في وضع التعديل: نأخذ المنتج الحالي لاستخدام بياناته كاحتياطي حتى لا تُمسح أي حقل
+    const currentProduct =
+      isEditMode && editingProductId
+        ? allProducts.find((p) => p._id === editingProductId)
+        : null;
+
+    const orFromProduct = (formVal, productVal) => {
+      const v = formVal !== undefined && formVal !== null && String(formVal).trim() !== "" ? formVal : productVal;
+      return v !== undefined && v !== null ? String(v) : "";
+    };
+
     const data = new FormData();
 
-    // BASIC INFO
-    data.append("enName", enName);
-    data.append("arName", arName);
-    data.append("enDescription", enDescription);
-    data.append("arDescription", arDescription);
-    data.append("defaultPrice", defaultPrice);
-    data.append("code", code);
+    // BASIC INFO - نستخدم قيمة النموذج أو الاحتياطي من المنتج
+    data.append("enName", orFromProduct(enName, currentProduct?.name?.en));
+    data.append("arName", orFromProduct(arName, currentProduct?.name?.ar));
+    data.append("enDescription", orFromProduct(enDescription, currentProduct?.description?.en));
+    data.append("arDescription", orFromProduct(arDescription, currentProduct?.description?.ar));
+    data.append("defaultPrice", orFromProduct(defaultPrice, currentProduct?.defaultPrice ?? currentProduct?.price));
+    data.append("code", orFromProduct(code, currentProduct?.code));
 
     // USES
-    data.append("arUses", arUses);
-    data.append("enUses", enUses);
+    data.append("arUses", orFromProduct(arUses, currentProduct?.uses?.ar));
+    data.append("enUses", orFromProduct(enUses, currentProduct?.uses?.en));
 
     // FEATURES
-    data.append("arFeatures", arFeatures);
-    data.append("enFeatures", enFeatures);
+    data.append("arFeatures", orFromProduct(arFeatures, currentProduct?.features?.ar));
+    data.append("enFeatures", orFromProduct(enFeatures, currentProduct?.features?.en));
 
     // COMPANY / BRAND
-    data.append("company", company);
-    data.append("brand", brand);
+    data.append("company", orFromProduct(company, currentProduct?.company?._id ?? currentProduct?.company));
+    data.append("brand", orFromProduct(brand, currentProduct?.brand?._id ?? currentProduct?.brand));
 
     // STOCK
-    data.append("stockQuantity", stockQ);
-    data.append("stockStatus", stockStatus);
+    data.append("stockQuantity", orFromProduct(stockQ, currentProduct?.stock));
+    data.append("stockStatus", orFromProduct(stockStatus, currentProduct?.stockStatus ?? "In Stock"));
 
-    // PRICE BOX - Always send, even if empty (for update mode)
+    // PRICE BOX
     if (isEditMode && editingProductId) {
-      // In edit mode, always send these fields
-      data.append("defaultPriceBox", defaultPriceBox || "");
-      data.append("piecesNumber", piecesNumber || "");
+      data.append(
+        "defaultPriceBox",
+        orFromProduct(defaultPriceBox, currentProduct?.defaultPriceBox)
+      );
+      data.append(
+        "piecesNumber",
+        orFromProduct(piecesNumber, currentProduct?.piecesNumber)
+      );
     } else {
-      // In add mode, only send if they have values
       if (
         defaultPriceBox !== undefined &&
         defaultPriceBox !== null &&
@@ -562,71 +577,109 @@ const Products = () => {
       }
     }
 
-    // MULTIPLE CATEGORIES
-    categories.forEach((catId) => {
+    // MULTIPLE CATEGORIES - إن كانت القائمة فاضية في التعديل نستخدم تصنيفات المنتج
+    const categoriesToSend =
+      isEditMode && currentProduct && (!categories || categories.length === 0)
+        ? (currentProduct.categories || []).map((c) => c._id || c)
+        : categories || [];
+    categoriesToSend.forEach((catId) => {
       data.append("categories", catId);
     });
 
-    // PRICE SEGMENTS (POSTMAN STYLE)
-    tierPrices.forEach((tp, index) => {
+    // PRICE SEGMENTS - إن كانت فاضية في التعديل نستخدم أسعار المنتج
+    const tierPricesToSend =
+      isEditMode && currentProduct && (!tierPrices || tierPrices.length === 0)
+        ? (currentProduct.tierPrices || []).map((tp) => ({
+            tier: tp.tier?._id ?? tp.tier,
+            price: tp.price,
+            boxPrice: tp.boxPrice,
+          }))
+        : tierPrices || [];
+    tierPricesToSend.forEach((tp, index) => {
       data.append(`tierPrices[${index}][tier]`, tp.tier);
       data.append(`tierPrices[${index}][price]`, tp.price);
-      // Only send boxPrice if it exists and is not undefined
       if (tp.boxPrice !== undefined && tp.boxPrice !== null) {
         data.append(`tierPrices[${index}][boxPrice]`, tp.boxPrice);
       }
     });
 
-    // IMAGES
-    // In edit mode: send new images if uploaded, otherwise send original image URLs
-    if (isEditMode && editingProductId) {
-      // Send new main image if uploaded
-      if (mainImage && typeof mainImage !== "string") {
-        data.append("image", mainImage);
-      } else if (mainImage && typeof mainImage === "string") {
-        // If it's a string (URL), send it as existing image
-        data.append("existingMainImage", mainImage);
-      } else if (originalMainImageUrl) {
-        // If no new image uploaded, send original image URL
-        data.append("existingMainImage", originalMainImageUrl);
-      }
+    // IMAGES - في التعديل: نرسل كل الصور من المنتج الحالي (مصدر واحد: currentProduct.picUrls) + الملفات الجديدة
+    if (isEditMode && editingProductId && currentProduct) {
+      const productPicUrls = Array.isArray(currentProduct.picUrls) ? [...currentProduct.picUrls] : [];
+      const mainUrlFromProduct = productPicUrls[0] || originalMainImageUrl || "";
+      const galleryUrlsFromProduct = productPicUrls.slice(1);
 
-      // Send new gallery images if uploaded (only new files, not replaced ones)
-      galleryImages.forEach((file) => {
-        if (typeof file !== "string") {
-          data.append("image", file);
-        } else {
-          data.append("existingGalleryImage", file);
-        }
-      });
-
-      // Send replaced gallery images (new files replacing old URLs)
-      Object.entries(replacedGalleryImages).forEach(
-        ([originalUrl, newFile]) => {
-          if (newFile) {
-            data.append("image", newFile);
-          }
-        },
+      const keptGalleryUrls = galleryUrlsFromProduct.filter(
+        (url) => url && !deletedGalleryImageUrls.includes(url) && !replacedGalleryImages[url]
       );
 
-      // Send original gallery images that weren't deleted or replaced
-      originalGalleryImageUrls.forEach((url) => {
-        // Skip if deleted
-        if (deletedGalleryImageUrls.includes(url)) {
-          return;
-        }
-        // Skip if replaced (replaced images are sent as new files above)
-        if (replacedGalleryImages[url]) {
-          return;
-        }
-        // Send as existing image
-        data.append("existingGalleryImage", url);
-      });
+      const mainUrlToKeep =
+        mainImage && typeof mainImage === "string"
+          ? mainImage
+          : mainImage && typeof mainImage !== "string"
+            ? null
+            : mainUrlFromProduct;
 
-      // Send deleted gallery image URLs (so backend knows to delete them)
+      const fullPicUrls = [
+        ...(mainUrlToKeep ? [mainUrlToKeep] : []),
+        ...keptGalleryUrls,
+      ];
+
+      // 1) إرسال القائمة الكاملة للصور (كل ما نريد الإبقاء عليه) بعدة صيغ لضمان فهم الباك إند
+      if (fullPicUrls.length > 0) {
+        data.append("picUrls", JSON.stringify(fullPicUrls));
+        fullPicUrls.forEach((url) => data.append("picUrls[]", url));
+      }
+
+      data.append("existingImageCount", String(fullPicUrls.length));
+
+      if (mainUrlToKeep) {
+        data.append("existingMainImage", mainUrlToKeep);
+      }
+      keptGalleryUrls.forEach((url) => {
+        data.append("existingGalleryImage", url);
+        data.append("existingGalleryImage[]", url);
+      });
       deletedGalleryImageUrls.forEach((url) => {
         data.append("deletedGalleryImage", url);
       });
+
+      // 2) الصور الجديدة (ملفات فقط) — يُفترض أن الباك إند يضيفها إلى picUrls ولا يستبدل القائمة
+      if (mainImage && typeof mainImage !== "string") {
+        data.append("image", mainImage);
+      }
+      galleryImages.forEach((file) => {
+        if (typeof file !== "string") data.append("image", file);
+        else data.append("existingGalleryImage", file);
+      });
+      Object.entries(replacedGalleryImages).forEach(([, newFile]) => {
+        if (newFile) data.append("image", newFile);
+      });
+    } else if (isEditMode && editingProductId) {
+      // تعديل بدون currentProduct (احتياطي): نعتمد على الحالة — نرسل كل الصور الموجودة من state
+      const fallbackMain = (mainImage && typeof mainImage === "string") ? mainImage : originalMainImageUrl;
+      const fallbackGallery = (originalGalleryImageUrls || []).filter(
+        (url) => !deletedGalleryImageUrls.includes(url) && !replacedGalleryImages[url]
+      );
+      const fallbackPicUrls = [...(fallbackMain ? [fallbackMain] : []), ...fallbackGallery];
+      if (fallbackPicUrls.length > 0) {
+        data.append("picUrls", JSON.stringify(fallbackPicUrls));
+        fallbackPicUrls.forEach((url) => data.append("picUrls[]", url));
+      }
+      if (fallbackMain) data.append("existingMainImage", fallbackMain);
+      fallbackGallery.forEach((url) => {
+        data.append("existingGalleryImage", url);
+        data.append("existingGalleryImage[]", url);
+      });
+      if (mainImage && typeof mainImage !== "string") data.append("image", mainImage);
+      galleryImages.forEach((file) => {
+        if (typeof file !== "string") data.append("image", file);
+        else data.append("existingGalleryImage", file);
+      });
+      Object.entries(replacedGalleryImages).forEach(([, newFile]) => {
+        if (newFile) data.append("image", newFile);
+      });
+      deletedGalleryImageUrls.forEach((url) => data.append("deletedGalleryImage", url));
     } else {
       // Add mode: only send new uploaded images
       if (mainImage) {
