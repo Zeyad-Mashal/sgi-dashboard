@@ -546,9 +546,12 @@ const Products = () => {
     data.append("company", orFromProduct(company, currentProduct?.company?._id ?? currentProduct?.company));
     data.append("brand", orFromProduct(brand, currentProduct?.brand?._id ?? currentProduct?.brand));
 
-    // STOCK
-    data.append("stockQuantity", orFromProduct(stockQ, currentProduct?.stock));
-    data.append("stockStatus", orFromProduct(stockStatus, currentProduct?.stockStatus ?? "In Stock"));
+    // STOCK — إرسال stock للباك إند (الكمية) + stockStatus، مع الاحتفاظ بـ stockQuantity للتوافق
+    const stockValue = orFromProduct(stockQ, currentProduct?.stock);
+    const stockStatusValue = orFromProduct(stockStatus, currentProduct?.stockStatus ?? "In Stock");
+    data.append("stock", stockValue);
+    data.append("stockQuantity", stockValue);
+    data.append("stockStatus", stockStatusValue);
 
     // PRICE BOX
     if (isEditMode && editingProductId) {
