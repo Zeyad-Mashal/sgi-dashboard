@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./SideNav.css";
 import logo from "../../../assets/logo-black.png";
 import { LuHouse } from "react-icons/lu";
@@ -19,6 +19,13 @@ import { FiShoppingCart } from "react-icons/fi";
 import { RiShoppingBag3Line } from "react-icons/ri";
 
 const SideNav = () => {
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("SGI_TOKEN");
+    window.location.reload();
+  };
+
   return (
     <div className="sidenav">
       <div className="sidenav_container">
@@ -109,13 +116,36 @@ const SideNav = () => {
             </li>
           </ul>
         </div> */}
-        <div className="Logout">
+        <div className="Logout" onClick={() => setIsLogoutModalOpen(true)}>
           <h3>
             <SlLogout />
             Logout
           </h3>
         </div>
       </div>
+
+      {isLogoutModalOpen && (
+        <div className="logout-modal-overlay">
+          <div className="logout-modal-content">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to log out?</p>
+            <div className="logout-modal-actions">
+              <button 
+                className="cancel-btn" 
+                onClick={() => setIsLogoutModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="logout-btn" 
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
