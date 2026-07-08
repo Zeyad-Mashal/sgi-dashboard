@@ -7,7 +7,7 @@ import { GrLocationPin } from "react-icons/gr";
 import { FaRegBuilding } from "react-icons/fa";
 import { TbCube } from "react-icons/tb";
 import { IoSettingsOutline } from "react-icons/io5";
-import { MdOutlineContactSupport } from "react-icons/md";
+import { MdOutlineContactSupport, MdOutlineRateReview } from "react-icons/md";
 import { SlLogout } from "react-icons/sl";
 import { Link, Links } from "react-router-dom";
 import { PiTag } from "react-icons/pi";
@@ -105,6 +105,13 @@ const SideNav = () => {
                 Users
               </Link>
             </li>
+            <li>
+              <Link to={"/reviews"}>
+                <MdOutlineRateReview />
+                Reviews
+              </Link>
+            </li>
+            
           </ul>
         </div>
         {/* <div className="general">

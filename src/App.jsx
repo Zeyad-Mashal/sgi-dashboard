@@ -20,6 +20,7 @@ import Coupon from "./pages/Coupon/Coupon";
 import Users from "./pages/Users/Users";
 import PurchaseOrders from "./pages/PurchaseOrders/PurchaseOrders";
 import Orders from "./pages/Orders/Orders";
+import Reviews from "./pages/Reviews/Reviews";
 
 function Layout() {
   const location = useLocation();
@@ -101,6 +102,13 @@ function Layout() {
           <Route
             path="/orders"
             element={user_token ? <Orders /> : <Navigate to="/login" replace />}
+          />
+
+          <Route
+            path="/reviews"
+            element={
+              user_token ? <Reviews /> : <Navigate to="/login" replace />
+            }
           />
 
           <Route
