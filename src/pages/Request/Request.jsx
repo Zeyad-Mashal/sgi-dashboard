@@ -155,6 +155,15 @@ const Request = () => {
     }
   };
 
+  const getPriceTierName = (priceTier) => {
+    if (!priceTier || priceTier === "null") return "";
+    if (typeof priceTier === "object") {
+      return priceTier.name || "";
+    }
+    const foundTier = allTiers.find((tier) => tier._id === priceTier);
+    return foundTier ? foundTier.name : priceTier;
+  };
+
   // Generate password with requirements: lowercase, uppercase, number, @, #
   const generatePassword = () => {
     const lowercase = "abcdefghijklmnopqrstuvwxyz";
@@ -188,7 +197,10 @@ const Request = () => {
   const handleApproveClick = (merchant) => {
     setMerchantToApprove(merchant);
     generatePassword(); // Auto-generate password when modal opens
-    setSelectedTierId(merchant.priceTier || ""); // Set existing tier if available
+    const tierId = merchant.priceTier && typeof merchant.priceTier === "object"
+      ? merchant.priceTier._id
+      : merchant.priceTier;
+    setSelectedTierId(tierId || ""); // Set existing tier if available
     setShowApprovalModal(true);
     setShowSuccess(false);
     setShowEditTier(false);
@@ -391,7 +403,10 @@ const Request = () => {
   // Open edit tier modal for approved merchant
   const handleEditTierClick = (merchant) => {
     setMerchantToEditTier(merchant);
-    setEditTierSelectedId(merchant.priceTier || "");
+    const tierId = merchant.priceTier && typeof merchant.priceTier === "object"
+      ? merchant.priceTier._id
+      : merchant.priceTier;
+    setEditTierSelectedId(tierId || "");
     setShowEditTierModal(true);
     setError(null);
     getAllTiers();
@@ -678,9 +693,9 @@ const Request = () => {
                 )}
 
                 {/* Price Tier - if available */}
-                {item.priceTier && (
+                {item.priceTier && item.priceTier !== "null" && (
                   <p>
-                    <strong>Price Tier:</strong> {item.priceTier}
+                    <strong>Price Tier:</strong> {getPriceTierName(item.priceTier)}
                   </p>
                 )}
 
@@ -975,7 +990,10 @@ const Request = () => {
                   onClick={() => {
                     setShowEditTier(true);
                     setShowSuccess(false);
-                    setSelectedTierId(merchantToApprove.priceTier || "");
+                    const tierId = merchantToApprove.priceTier && typeof merchantToApprove.priceTier === "object"
+                      ? merchantToApprove.priceTier._id
+                      : merchantToApprove.priceTier;
+                    setSelectedTierId(tierId || "");
                     getAllTiers();
                   }}
                 >
