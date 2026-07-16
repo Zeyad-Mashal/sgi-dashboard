@@ -104,11 +104,13 @@ const Categories = () => {
   const [openAddToDraftModal, setOpenAddToDraftModal] = useState(false);
   const [draftCategoryId, setDraftCategoryId] = useState(null);
   const [draftCategoryName, setDraftCategoryName] = useState("");
-  const handleOpenDraft = (cat) => {
-    setDraftCategoryId(cat._id);
+  const [draftItemType, setDraftItemType] = useState("category");
+  const handleOpenDraft = (item, type = "category") => {
+    setDraftCategoryId(item._id);
+    setDraftItemType(type);
     setOpenAddToDraftModal(true);
     setDraftCategoryName(
-      cat.name?.en || cat.name?.ar || cat.name || "this category"
+      item.name?.en || item.name?.ar || item.name || `this ${type}`
     );
   };
   const handleAddToDraft = () => {
@@ -117,7 +119,14 @@ const Categories = () => {
       setError,
       setLoading,
       setOpenAddToDraftModal,
-      getAllCategories,
+      () => {
+        getAllCategories();
+        if (draftItemType === "subcategory") {
+          setSelectedSubCategories((prev) =>
+            prev.filter((sub) => sub._id !== draftCategoryId)
+          );
+        }
+      },
       draftCategoryId
     );
   };
@@ -147,11 +156,6 @@ const Categories = () => {
       cat.company && typeof cat.company === "object"
         ? cat.company._id
         : cat.company || "";
-
-    // Debug: Log to console to help diagnose the issue
-    console.log("Opening sub category modal for category:", cat);
-    console.log("Company object:", cat.company);
-    console.log("Extracted companyId:", companyId);
 
     // Set the IDs
     setSelectedCompanyId(companyId);
@@ -239,6 +243,22 @@ const Categories = () => {
     );
   };
 
+  const getDraftedSubCategories = () => {
+    if (!Array.isArray(draftedCategories)) return [];
+
+    return draftedCategories.flatMap((category) => {
+      const subCategories = Array.isArray(category.subCategories)
+        ? category.subCategories
+        : [];
+
+      return subCategories.map((subCategory) => ({
+        ...subCategory,
+        parentCategoryName: category.name,
+        parentCompany: category.company,
+      }));
+    });
+  };
+
   const handleOpenDraftedCategories = () => {
     setOpenDraftedCategoriesModal(true);
     getDraftedCategories();
@@ -276,6 +296,8 @@ const Categories = () => {
       setRestoringCategoryId(null);
     }
   };
+
+  const draftedSubCategories = getDraftedSubCategories();
 
   return (
     <div className="Categories">
@@ -515,7 +537,7 @@ const Categories = () => {
         </div>
       )}
       {openAddToDraftModal && (
-        <div className="add_category">
+        <div className="add_category draft_modal_layer">
           <div
             className="overlay"
             onClick={() => setOpenAddToDraftModal(false)}
@@ -534,12 +556,16 @@ const Categories = () => {
               <strong>"{draftCategoryName}"</strong> to draft?
             </p>
             <p className="draft_info_text">
-              This category will be moved to the draft section and will not be
-              visible in the main category list.
+              This {draftItemType} will be moved to the draft section and will
+              not be visible in the main {draftItemType} list.
             </p>
 
             <div className="delete_details">
-              <strong>Category Name:</strong>
+              <strong>
+                {draftItemType === "subcategory"
+                  ? "SubCategory Name:"
+                  : "Category Name:"}
+              </strong>
               <span>{draftCategoryName}</span>
             </div>
 
@@ -661,6 +687,7 @@ const Categories = () => {
                     <th>AR Name</th>
                     <th>Company ID</th>
                     <th>Category ID</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
 
@@ -672,11 +699,17 @@ const Categories = () => {
                         <td>{sub.name.ar}</td>
                         <td>{showCompanyName.en}</td>
                         <td>{showCategoryName.en}</td>
+                        <td className="actions">
+                          <RiDeleteBin6Line
+                            className="delete_icon"
+                            onClick={() => handleOpenDraft(sub, "subcategory")}
+                          />
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" style={{ textAlign: "center" }}>
+                      <td colSpan="5" style={{ textAlign: "center" }}>
                         No SubCategories Yet
                       </td>
                     </tr>
@@ -706,8 +739,8 @@ const Categories = () => {
               onClick={() => setOpenDraftedCategoriesModal(false)}
             />
             <div className="drafted_categories_header">
-              <h2>Drafted Categories</h2>
-              <p>All categories that have been moved to draft</p>
+              <h2>Drafted Categories & SubCategories</h2>
+              <p>All categories and subcategories that have been moved to draft</p>
             </div>
 
             <div className="drafted_categories_content">
@@ -720,56 +753,133 @@ const Categories = () => {
                 <div className="draft_error_message">
                   {draftedCategoriesError}
                 </div>
-              ) : draftedCategories && draftedCategories.length > 0 ? (
-                <div className="drafted_categories_list">
-                  {draftedCategories.map((category) => (
-                    <div className="drafted_category_item" key={category._id}>
-                      <div className="drafted_category_info">
-                        <h3>
-                          {category.name?.en ||
-                            category.name?.ar ||
-                            category.name ||
-                            "N/A"}
-                        </h3>
-                        {category.name?.ar && category.name?.en && (
-                          <p className="drafted_category_ar">
-                            {category.name.ar}
-                          </p>
-                        )}
-                        <div className="drafted_category_details">
-                          {category.company && (
-                            <p>
-                              <strong>Company:</strong>{" "}
-                              {typeof category.company === "object"
-                                ? category.company.name?.en ||
-                                  category.company.name?.ar ||
-                                  category.company.name ||
-                                  "N/A"
-                                : category.company || "N/A"}
-                            </p>
-                          )}
-                          {category.subCategories && (
-                            <p>
-                              <strong>Sub Categories:</strong>{" "}
-                              {category.subCategories.length || 0}
-                            </p>
-                          )}
-                        </div>
-                        <div className="drafted_category_actions">
-                          <button
-                            className="restore_category_btn"
-                            onClick={() => handleRestoreCategory(category._id)}
-                            disabled={restoringCategoryId === category._id}
+              ) : (draftedCategories && draftedCategories.length > 0) ||
+                draftedSubCategories.length > 0 ? (
+                <>
+                  {draftedCategories && draftedCategories.length > 0 && (
+                    <>
+                      <h3 className="drafted_group_title">Categories</h3>
+                      <div className="drafted_categories_list">
+                        {draftedCategories.map((category) => (
+                          <div
+                            className="drafted_category_item"
+                            key={category._id}
                           >
-                            {restoringCategoryId === category._id
-                              ? "Restoring..."
-                              : "Restore"}
-                          </button>
-                        </div>
+                            <div className="drafted_category_info">
+                              <h3>
+                                {category.name?.en ||
+                                  category.name?.ar ||
+                                  category.name ||
+                                  "N/A"}
+                              </h3>
+                              {category.name?.ar && category.name?.en && (
+                                <p className="drafted_category_ar">
+                                  {category.name.ar}
+                                </p>
+                              )}
+                              <div className="drafted_category_details">
+                                {category.company && (
+                                  <p>
+                                    <strong>Company:</strong>{" "}
+                                    {typeof category.company === "object"
+                                      ? category.company.name?.en ||
+                                        category.company.name?.ar ||
+                                        category.company.name ||
+                                        "N/A"
+                                      : category.company || "N/A"}
+                                  </p>
+                                )}
+                                {category.subCategories && (
+                                  <p>
+                                    <strong>Sub Categories:</strong>{" "}
+                                    {category.subCategories.length || 0}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="drafted_category_actions">
+                                <button
+                                  className="restore_category_btn"
+                                  onClick={() =>
+                                    handleRestoreCategory(category._id)
+                                  }
+                                  disabled={restoringCategoryId === category._id}
+                                >
+                                  {restoringCategoryId === category._id
+                                    ? "Restoring..."
+                                    : "Restore"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    </>
+                  )}
+
+                  {draftedSubCategories.length > 0 && (
+                    <>
+                      <h3 className="drafted_group_title">SubCategories</h3>
+                      <div className="drafted_categories_list">
+                        {draftedSubCategories.map((subCategory) => (
+                          <div
+                            className="drafted_category_item"
+                            key={subCategory._id}
+                          >
+                            <div className="drafted_category_info">
+                              <h3>
+                                {subCategory.name?.en ||
+                                  subCategory.name?.ar ||
+                                  subCategory.name ||
+                                  "N/A"}
+                              </h3>
+                              {subCategory.name?.ar && subCategory.name?.en && (
+                                <p className="drafted_category_ar">
+                                  {subCategory.name.ar}
+                                </p>
+                              )}
+                              <div className="drafted_category_details">
+                                <p>
+                                  <strong>Parent Category:</strong>{" "}
+                                  {subCategory.parentCategoryName?.en ||
+                                    subCategory.parentCategoryName?.ar ||
+                                    subCategory.parentCategoryName ||
+                                    "N/A"}
+                                </p>
+                                {subCategory.parentCompany && (
+                                  <p>
+                                    <strong>Company:</strong>{" "}
+                                    {typeof subCategory.parentCompany ===
+                                    "object"
+                                      ? subCategory.parentCompany.name?.en ||
+                                        subCategory.parentCompany.name?.ar ||
+                                        subCategory.parentCompany.name ||
+                                        "N/A"
+                                      : subCategory.parentCompany || "N/A"}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="drafted_category_actions">
+                                <button
+                                  className="restore_category_btn"
+                                  onClick={() =>
+                                    handleRestoreCategory(subCategory._id)
+                                  }
+                                  disabled={
+                                    restoringCategoryId === subCategory._id
+                                  }
+                                >
+                                  {restoringCategoryId === subCategory._id
+                                    ? "Restoring..."
+                                    : "Restore"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
               ) : (
                 <div className="no_drafted_categories">
                   <p>No drafted categories found</p>
