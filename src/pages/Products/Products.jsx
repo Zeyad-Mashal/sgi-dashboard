@@ -33,7 +33,7 @@ const Products = () => {
   const [originalGalleryImageUrls, setOriginalGalleryImageUrls] = useState([]);
   // Track deleted and replaced gallery images in edit mode
   const [deletedGalleryImageUrls, setDeletedGalleryImageUrls] = useState([]);
-  const [replacedGalleryImages, setReplacedGalleryImages] = useState([]); // {originalUrl: newFile}
+  const [replacedGalleryImages, setReplacedGalleryImages] = useState({}); // {originalUrl: newFile}
 
   const handleMainUpload = (e) => {
     const file = e.target.files[0];
@@ -274,8 +274,8 @@ const Products = () => {
     setOriginalMainImageUrl(null);
     setOriginalGalleryImageUrls([]);
     setDeletedGalleryImageUrls([]);
-    setReplacedGalleryImages([]);
-    setIsEditMode(false);
+    setReplacedGalleryImages({});
+      setIsEditMode(false);
     setEditingProductId(null);
     setDefaultPriceBox("");
     setPiecesNumber("");
@@ -406,14 +406,14 @@ const Products = () => {
       setMainImage(null);
       setGalleryImages([]);
       setDeletedGalleryImageUrls([]);
-      setReplacedGalleryImages([]);
+      setReplacedGalleryImages({});
     } else {
       setOriginalMainImageUrl(null);
       setOriginalGalleryImageUrls([]);
       setMainImage(null);
       setGalleryImages([]);
       setDeletedGalleryImageUrls([]);
-      setReplacedGalleryImages([]);
+      setReplacedGalleryImages({});
     }
   };
 
@@ -426,8 +426,54 @@ const Products = () => {
     setShowTable(false);
   };
 
+  // Convert an existing image URL into a File so the backend keeps it when new images are uploaded
+  const urlToFile = async (url, filename = "image.jpg") => {
+    try {
+      const response = await fetch(url, { mode: "cors" });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${url}`);
+      }
+      const blob = await response.blob();
+      const extFromType = blob.type?.split("/")[1];
+      const extFromUrl = url.split(".").pop()?.split("?")[0];
+      const ext = extFromType || extFromUrl || "jpg";
+      const safeName = filename.includes(".")
+        ? filename
+        : `${filename}.${ext}`;
+      return new File([blob], safeName, {
+        type: blob.type || `image/${ext}`,
+      });
+    } catch (err) {
+      // Fallback via canvas when direct fetch is blocked by CORS
+      const blob = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob(
+              (b) => (b ? resolve(b) : reject(new Error("Canvas empty"))),
+              "image/jpeg",
+              0.92,
+            );
+          } catch (e) {
+            reject(e);
+          }
+        };
+        img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+        img.src = url;
+      });
+      const safeName = filename.includes(".") ? filename : `${filename}.jpg`;
+      return new File([blob], safeName, { type: "image/jpeg" });
+    }
+  };
+
   // SUBMIT PRODUCT (ADD OR UPDATE)
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     // Validation - Check required fields
     const missingFields = [];
 
@@ -606,83 +652,108 @@ const Products = () => {
       }
     });
 
-    // IMAGES - في التعديل: نرسل كل الصور من المنتج الحالي (مصدر واحد: currentProduct.picUrls) + الملفات الجديدة
-    if (isEditMode && editingProductId && currentProduct) {
-      const productPicUrls = Array.isArray(currentProduct.picUrls) ? [...currentProduct.picUrls] : [];
-      const mainUrlFromProduct = productPicUrls[0] || originalMainImageUrl || "";
+    // IMAGES
+    // الباك إند بيستبدل كل الصور لو اتبعت أي image جديد، فنرجع نرفع الصور القديمة المحفوظة كملفات مع الجديدة
+    if (isEditMode && editingProductId) {
+      const productPicUrls = Array.isArray(currentProduct?.picUrls)
+        ? [...currentProduct.picUrls]
+        : [
+            ...(originalMainImageUrl ? [originalMainImageUrl] : []),
+            ...(originalGalleryImageUrls || []),
+          ];
+
+      const mainUrlFromProduct =
+        productPicUrls[0] || originalMainImageUrl || "";
       const galleryUrlsFromProduct = productPicUrls.slice(1);
 
       const keptGalleryUrls = galleryUrlsFromProduct.filter(
-        (url) => url && !deletedGalleryImageUrls.includes(url) && !replacedGalleryImages[url]
+        (url) =>
+          url &&
+          !deletedGalleryImageUrls.includes(url) &&
+          !replacedGalleryImages[url],
       );
 
-      const mainUrlToKeep =
-        mainImage && typeof mainImage === "string"
-          ? mainImage
-          : mainImage && typeof mainImage !== "string"
-            ? null
-            : mainUrlFromProduct;
-
-      const fullPicUrls = [
-        ...(mainUrlToKeep ? [mainUrlToKeep] : []),
-        ...keptGalleryUrls,
-      ];
-
-      // 1) إرسال القائمة الكاملة للصور (كل ما نريد الإبقاء عليه) بعدة صيغ لضمان فهم الباك إند
-      if (fullPicUrls.length > 0) {
-        data.append("picUrls", JSON.stringify(fullPicUrls));
-        fullPicUrls.forEach((url) => data.append("picUrls[]", url));
-      }
-
-      data.append("existingImageCount", String(fullPicUrls.length));
-
-      if (mainUrlToKeep) {
-        data.append("existingMainImage", mainUrlToKeep);
-      }
-      keptGalleryUrls.forEach((url) => {
-        data.append("existingGalleryImage", url);
-        data.append("existingGalleryImage[]", url);
-      });
-      deletedGalleryImageUrls.forEach((url) => {
-        data.append("deletedGalleryImage", url);
-      });
-
-      // 2) الصور الجديدة (ملفات فقط) — يُفترض أن الباك إند يضيفها إلى picUrls ولا يستبدل القائمة
-      if (mainImage && typeof mainImage !== "string") {
-        data.append("image", mainImage);
-      }
-      galleryImages.forEach((file) => {
-        if (typeof file !== "string") data.append("image", file);
-        else data.append("existingGalleryImage", file);
-      });
-      Object.entries(replacedGalleryImages).forEach(([, newFile]) => {
-        if (newFile) data.append("image", newFile);
-      });
-    } else if (isEditMode && editingProductId) {
-      // تعديل بدون currentProduct (احتياطي): نعتمد على الحالة — نرسل كل الصور الموجودة من state
-      const fallbackMain = (mainImage && typeof mainImage === "string") ? mainImage : originalMainImageUrl;
-      const fallbackGallery = (originalGalleryImageUrls || []).filter(
-        (url) => !deletedGalleryImageUrls.includes(url) && !replacedGalleryImages[url]
+      const hasNewMainFile = mainImage && typeof mainImage !== "string";
+      const hasNewGalleryFiles = galleryImages.some(
+        (file) => typeof file !== "string",
       );
-      const fallbackPicUrls = [...(fallbackMain ? [fallbackMain] : []), ...fallbackGallery];
-      if (fallbackPicUrls.length > 0) {
-        data.append("picUrls", JSON.stringify(fallbackPicUrls));
-        fallbackPicUrls.forEach((url) => data.append("picUrls[]", url));
+      const hasReplacements =
+        Object.keys(replacedGalleryImages || {}).length > 0;
+      const hasDeletions = deletedGalleryImageUrls.length > 0;
+      const imageChanged =
+        hasNewMainFile ||
+        hasNewGalleryFiles ||
+        hasReplacements ||
+        hasDeletions;
+
+      if (imageChanged) {
+        try {
+          setLoading(true);
+          const finalImageFiles = [];
+
+          // 1) Main image: new file OR kept original URL as file
+          if (hasNewMainFile) {
+            finalImageFiles.push(mainImage);
+          } else if (mainUrlFromProduct) {
+            finalImageFiles.push(
+              await urlToFile(mainUrlFromProduct, "main-image"),
+            );
+          }
+
+          // 2) Kept gallery images (not deleted / not replaced)
+          for (let i = 0; i < keptGalleryUrls.length; i++) {
+            finalImageFiles.push(
+              await urlToFile(keptGalleryUrls[i], `gallery-kept-${i}`),
+            );
+          }
+
+          // 3) Replaced gallery images (new files)
+          Object.values(replacedGalleryImages || {}).forEach((newFile) => {
+            if (newFile) finalImageFiles.push(newFile);
+          });
+
+          // 4) Newly added gallery images
+          galleryImages.forEach((file) => {
+            if (typeof file !== "string") finalImageFiles.push(file);
+          });
+
+          if (finalImageFiles.length === 0) {
+            setError("At least one product image is required");
+            setLoading(false);
+            return;
+          }
+
+          finalImageFiles.forEach((file) => data.append("image", file));
+        } catch (err) {
+          console.error("Error preparing product images:", err);
+          setError(
+            "Failed to prepare product images. Please try again.",
+          );
+          setLoading(false);
+          return;
+        }
+      } else {
+        // No image changes — keep existing URLs so backend does not clear them
+        const mainUrlToKeep =
+          (mainImage && typeof mainImage === "string"
+            ? mainImage
+            : null) || mainUrlFromProduct;
+
+        if (mainUrlToKeep) {
+          data.append("existingMainImage", mainUrlToKeep);
+        }
+        keptGalleryUrls.forEach((url) => {
+          data.append("existingGalleryImage", url);
+        });
+
+        const fullPicUrls = [
+          ...(mainUrlToKeep ? [mainUrlToKeep] : []),
+          ...keptGalleryUrls,
+        ];
+        if (fullPicUrls.length > 0) {
+          data.append("picUrls", JSON.stringify(fullPicUrls));
+        }
       }
-      if (fallbackMain) data.append("existingMainImage", fallbackMain);
-      fallbackGallery.forEach((url) => {
-        data.append("existingGalleryImage", url);
-        data.append("existingGalleryImage[]", url);
-      });
-      if (mainImage && typeof mainImage !== "string") data.append("image", mainImage);
-      galleryImages.forEach((file) => {
-        if (typeof file !== "string") data.append("image", file);
-        else data.append("existingGalleryImage", file);
-      });
-      Object.entries(replacedGalleryImages).forEach(([, newFile]) => {
-        if (newFile) data.append("image", newFile);
-      });
-      deletedGalleryImageUrls.forEach((url) => data.append("deletedGalleryImage", url));
     } else {
       // Add mode: only send new uploaded images
       if (mainImage) {

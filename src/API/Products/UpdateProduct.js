@@ -1,7 +1,7 @@
 /**
- * تحديث المنتج — body = FormData يحتوي كل بيانات المنتج.
- * الصور: يُرسل picUrls (JSON + picUrls[]) للقائمة الكاملة للصور الحالية، و image للملفات الجديدة فقط.
- * الباك إند يجب أن يدمج: product.picUrls = [...قيمة picUrls المرسلة, ...روابط الملفات المرفوعة الجديدة].
+ * تحديث المنتج — body = FormData.
+ * عند إضافة/تعديل صور: الفرونت يعيد رفع الصور القديمة المحفوظة + الجديدة معاً،
+ * لأن الباك إند يستبدل picUrls بأي ملفات image جديدة بدل الدمج.
  */
 const UpdateProduct = async (
     id,
@@ -35,7 +35,6 @@ const UpdateProduct = async (
             setShowTable(true);
             setAddProductModel(false);
             setLoading(false);
-            // Call optional success callback
             if (onSuccess && typeof onSuccess === 'function') {
                 onSuccess();
             }

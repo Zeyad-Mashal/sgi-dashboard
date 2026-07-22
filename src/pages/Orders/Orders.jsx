@@ -1,6 +1,6 @@
 import React from "react";
 import "./Orders.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaPlus } from "react-icons/fa6";
 import { RiEditLine } from "react-icons/ri";
 import { RiDeleteBin6Line } from "react-icons/ri";
@@ -30,33 +30,64 @@ import { saveAs } from "file-saver";
 const Orders = () => {
   const [currentFilter, setCurrentFilter] = useState("New");
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [allOrders, setAllOrders] = useState([]);
+  const [orderDetails, setOrderDetails] = useState([]);
+  const [showBox, setShowBox] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const fetchIdRef = useRef(0);
+
+  const getAllOrders = (filter = currentFilter) => {
+    const requestId = ++fetchIdRef.current;
+    setLoading(true);
+    setError(null);
+
+    AllOrders(
+      (orders) => {
+        if (requestId === fetchIdRef.current) {
+          setAllOrders(orders);
+        }
+      },
+      (err) => {
+        if (requestId === fetchIdRef.current) {
+          setError(err);
+        }
+      },
+      (isLoading) => {
+        if (requestId === fetchIdRef.current) {
+          setLoading(isLoading);
+        }
+      },
+      filter,
+    );
+  };
+
+  const handleFilterChange = (filter) => {
+    setSearchQuery("");
+    setAllOrders([]);
+    setCurrentFilter(filter);
+    getAllOrders(filter);
+  };
+
   useEffect(() => {
-    getAllOrders();
-  }, [currentFilter]);
+    getAllOrders("New");
+  }, []);
+
   useEffect(() => {
     if (selectedOrderId) {
       getOrderDetailsApi();
     }
   }, [selectedOrderId]);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [allOrders, setAllOrders] = useState([]);
-  const [orderDetails, setOrderDetails] = useState([]);
-  const [showBox, setShowBox] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const getAllOrders = () => {
-    AllOrders(
-      setAllOrders,
-      setError,
-      setLoading,
-      currentFilter,
-      setCurrentFilter,
-    );
-  };
   const getOrderDetailsApi = () => {
-    GetOrderDetails(setOrderDetails, setError, setLoading, selectedOrderId);
+    GetOrderDetails(
+      setOrderDetails,
+      setError,
+      setDetailsLoading,
+      selectedOrderId,
+    );
   };
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [orderToUpdate, setOrderToUpdate] = useState(null);
@@ -206,19 +237,15 @@ const Orders = () => {
               }),
               new TableCell({
                 children: [new Paragraph({ text: "Product Name", bold: true })],
-                width: { size: 40, type: WidthType.PERCENTAGE },
-              }),
-              new TableCell({
-                children: [new Paragraph({ text: "SKU", bold: true })],
-                width: { size: 20, type: WidthType.PERCENTAGE },
+                width: { size: 50, type: WidthType.PERCENTAGE },
               }),
               new TableCell({
                 children: [new Paragraph({ text: "Quantity", bold: true })],
-                width: { size: 10, type: WidthType.PERCENTAGE },
+                width: { size: 15, type: WidthType.PERCENTAGE },
               }),
               new TableCell({
                 children: [new Paragraph({ text: "Price", bold: true })],
-                width: { size: 10, type: WidthType.PERCENTAGE },
+                width: { size: 15, type: WidthType.PERCENTAGE },
               }),
               new TableCell({
                 children: [new Paragraph({ text: "Subtotal", bold: true })],
@@ -242,9 +269,6 @@ const Orders = () => {
                       text: item?.name || item?.productId?.name?.en || "N/A",
                     }),
                   ],
-                }),
-                new TableCell({
-                  children: [new Paragraph({ text: item?.sku || "N/A" })],
                 }),
                 new TableCell({
                   children: [new Paragraph({ text: `${item?.quantity || 0}` })],
@@ -277,10 +301,48 @@ const Orders = () => {
         );
       }
 
-      // Total Amount
+      // Order Summary (Subtotal, Shipping, Tax, Total)
+      const itemsSubtotal =
+        orderDetails?.cartItems?.reduce(
+          (sum, item) => sum + (item?.quantity || 0) * (item?.price || 0),
+          0,
+        ) || 0;
+      const shippingAmount = orderDetails?.shipping ?? 0;
+      const taxAmount = orderDetails?.tax ?? 0;
+      const formatAed = (value) => {
+        const num = Number(value) || 0;
+        return `${Number.isInteger(num) ? num : num.toFixed(2)} AED`;
+      };
+
       sections.push(
         new Paragraph({
+          text: "ORDER SUMMARY",
+          heading: HeadingLevel.HEADING_1,
           spacing: { before: 400, after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Subtotal: ", bold: true }),
+            new TextRun({ text: formatAed(itemsSubtotal) }),
+          ],
+          alignment: AlignmentType.RIGHT,
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Shipping: ", bold: true }),
+            new TextRun({ text: formatAed(shippingAmount) }),
+          ],
+          alignment: AlignmentType.RIGHT,
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Tax: ", bold: true }),
+            new TextRun({ text: formatAed(taxAmount) }),
+          ],
+          alignment: AlignmentType.RIGHT,
+          spacing: { after: 100 },
         }),
         new Paragraph({
           children: [
@@ -290,12 +352,13 @@ const Orders = () => {
               size: 28,
             }),
             new TextRun({
-              text: `${orderDetails?.totalAmount || 0} AED`,
+              text: formatAed(orderDetails?.totalAmount || 0),
               bold: true,
               size: 28,
             }),
           ],
           alignment: AlignmentType.RIGHT,
+          spacing: { before: 100 },
         }),
       );
 
@@ -344,11 +407,24 @@ const Orders = () => {
             if (query.trim() === "") {
               getAllOrders();
             } else {
-              // Search as user types
+              const requestId = ++fetchIdRef.current;
+              setLoading(true);
               OrderSearch(
-                setAllOrders,
-                setError,
-                setLoading,
+                (orders) => {
+                  if (requestId === fetchIdRef.current) {
+                    setAllOrders(Array.isArray(orders) ? orders : []);
+                  }
+                },
+                (err) => {
+                  if (requestId === fetchIdRef.current) {
+                    setError(err);
+                  }
+                },
+                (isLoading) => {
+                  if (requestId === fetchIdRef.current) {
+                    setLoading(isLoading);
+                  }
+                },
                 encodeURIComponent(query.trim()),
               );
             }
@@ -361,36 +437,28 @@ const Orders = () => {
       <div className="order_container">
         <div className="order_filter">
           <p
-            onClick={() => {
-              setCurrentFilter("New");
-            }}
+            onClick={() => handleFilterChange("New")}
             className={currentFilter === "New" ? "active" : ""}
           >
             New
           </p>
 
           <p
-            onClick={() => {
-              setCurrentFilter("Success");
-            }}
+            onClick={() => handleFilterChange("Success")}
             className={currentFilter === "Success" ? "active" : ""}
           >
             Completed
           </p>
 
           <p
-            onClick={() => {
-              setCurrentFilter("Processing");
-            }}
+            onClick={() => handleFilterChange("Processing")}
             className={currentFilter === "Processing" ? "active" : ""}
           >
             Pending
           </p>
 
           <p
-            onClick={() => {
-              setCurrentFilter("Canceled");
-            }}
+            onClick={() => handleFilterChange("Canceled")}
             className={currentFilter === "Canceled" ? "active" : ""}
           >
             Canceled
@@ -489,7 +557,7 @@ const Orders = () => {
                     <button
                       className="export_order_btn"
                       onClick={exportOrder}
-                      disabled={loading || !orderDetails}
+                      disabled={detailsLoading || !orderDetails}
                       title="Export Order"
                     >
                       <HiDownload />
@@ -502,7 +570,7 @@ const Orders = () => {
                   </div>
                 </div>
 
-                {loading ? (
+                {detailsLoading ? (
                   <div className="loading">
                     <p>Loading order details...</p>
                     <span className="loader"></span>

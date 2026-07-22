@@ -1,4 +1,4 @@
-const AllOrders = async (setAllOrders, setError, setLoading, currentFilter, setCurrentFilter) => {
+const AllOrders = async (setAllOrders, setError, setLoading, currentFilter) => {
     const URL = `https://sgi-dy1p.onrender.com/api/v1/order/get?page=1&status=${currentFilter}`;
     setLoading(true)
     const token = localStorage.getItem("SGI_TOKEN")
@@ -16,24 +16,16 @@ const AllOrders = async (setAllOrders, setError, setLoading, currentFilter, setC
         const result = await response.json();
 
         if (response.ok) {
-            setAllOrders(result.orders)
+            setAllOrders(Array.isArray(result.orders) ? result.orders : [])
             setLoading(false)
-            setCurrentFilter(currentFilter)
         } else {
-            if (response.status == 400) {
-                setError(result.message);
-                setLoading(false)
-                console.log(result.message);
-
-            } else if (response.status == 403) {
-                setError(result.message);
-                setLoading(false)
-            } else {
-                setError(result.message);
-                setLoading(false)
-            }
+            setAllOrders([])
+            setError(result.message);
+            setLoading(false)
+            console.log(result.message);
         }
     } catch (error) {
+        setAllOrders([])
         setError('An error occurred');
         setLoading(false)
     }
