@@ -15,25 +15,16 @@ const RejectedRequest = async (setAllRequests, setError, setLoading) => {
         const result = await response.json();
 
         if (response.ok) {
-            setAllRequests(result.merchants)
+            setAllRequests(Array.isArray(result.merchants) ? result.merchants : [])
             setLoading(false)
         } else {
-            if (response.status == 401) {
-                setError(result.message);
-                setLoading(false)
-                console.log(result.message);
-
-            } else if (response.status == 400) {
-                setError(result.message);
-                setLoading(false)
-                console.log(result.message);
-
-            } else {
-                setError(result.message);
-                setLoading(false)
-            }
+            setAllRequests([])
+            setError(result.message);
+            setLoading(false)
+            console.log(result.message);
         }
     } catch (error) {
+        setAllRequests([])
         setError('An error occurred');
         setLoading(false)
     }

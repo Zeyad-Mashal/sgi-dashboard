@@ -1,6 +1,6 @@
 import React from "react";
 import "./Request.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaPlus } from "react-icons/fa6";
 import img from "../../assets/company.jpg";
 import { MdOutlineDateRange } from "react-icons/md";
@@ -28,6 +28,7 @@ const Request = () => {
   const [error, setError] = useState(null);
   const [allRequests, setAllRequests] = useState([]);
   const [downloadingFile, setDownloadingFile] = useState(null);
+  const fetchIdRef = useRef(0);
 
   // Price Tiers State
   const [allTiers, setAllTiers] = useState([]);
@@ -61,40 +62,56 @@ const Request = () => {
   const [newTierName, setNewTierName] = useState("");
   const [addTierLoading, setAddTierLoading] = useState(false);
 
-  // Fetch requests when filter changes
-  useEffect(() => {
-    fetchRequestsByFilter();
-  }, [currentFilter]);
-
   // Fetch all price tiers on component mount
   useEffect(() => {
     getAllTiers();
+    fetchRequestsByFilter("all");
   }, []);
 
   const getAllTiers = () => {
     PriceTier(setAllTiers, setError, setTiersLoading);
   };
 
-  const fetchRequestsByFilter = () => {
+  const fetchRequestsByFilter = (filter = currentFilter) => {
+    const requestId = ++fetchIdRef.current;
     setLoading(true);
+    setError(null);
     setAllRequests([]);
 
-    switch (currentFilter) {
+    const setRequestsSafe = (merchants) => {
+      if (requestId !== fetchIdRef.current) return;
+      setAllRequests(Array.isArray(merchants) ? merchants : []);
+    };
+    const setErrorSafe = (err) => {
+      if (requestId !== fetchIdRef.current) return;
+      setError(err);
+    };
+    const setLoadingSafe = (isLoading) => {
+      if (requestId !== fetchIdRef.current) return;
+      setLoading(isLoading);
+    };
+
+    switch (filter) {
       case "all":
-        AllRequest(setAllRequests, setError, setLoading);
+        AllRequest(setRequestsSafe, setErrorSafe, setLoadingSafe);
         break;
       case "approved":
-        ApprovedRequests(setAllRequests, setError, setLoading);
+        ApprovedRequests(setRequestsSafe, setErrorSafe, setLoadingSafe);
         break;
       case "pending":
-        PendingRequest(setAllRequests, setError, setLoading);
+        PendingRequest(setRequestsSafe, setErrorSafe, setLoadingSafe);
         break;
       case "rejected":
-        RejectedRequest(setAllRequests, setError, setLoading);
+        RejectedRequest(setRequestsSafe, setErrorSafe, setLoadingSafe);
         break;
       default:
-        AllRequest(setAllRequests, setError, setLoading);
+        AllRequest(setRequestsSafe, setErrorSafe, setLoadingSafe);
     }
+  };
+
+  const handleFilterChange = (filter) => {
+    setCurrentFilter(filter);
+    fetchRequestsByFilter(filter);
   };
 
   const handleDownloadFile = async (fileId, fileName) => {
@@ -600,28 +617,28 @@ const Request = () => {
       <div className="resquest_container">
         <div className="request_filter">
           <p
-            onClick={() => setCurrentFilter("all")}
+            onClick={() => handleFilterChange("all")}
             className={currentFilter === "all" ? "active" : ""}
           >
             All
           </p>
 
           <p
-            onClick={() => setCurrentFilter("approved")}
+            onClick={() => handleFilterChange("approved")}
             className={currentFilter === "approved" ? "active" : ""}
           >
             Approved
           </p>
 
           <p
-            onClick={() => setCurrentFilter("pending")}
+            onClick={() => handleFilterChange("pending")}
             className={currentFilter === "pending" ? "active" : ""}
           >
             Pending
           </p>
 
           <p
-            onClick={() => setCurrentFilter("rejected")}
+            onClick={() => handleFilterChange("rejected")}
             className={currentFilter === "rejected" ? "active" : ""}
           >
             Rejected
@@ -636,8 +653,10 @@ const Request = () => {
             </div>
           ) : error ? (
             <p>{error}</p>
+          ) : (allRequests || []).length === 0 ? (
+            <p className="emptyOrder">No requests found in this tab.</p>
           ) : (
-            allRequests.map((item) => (
+            (allRequests || []).map((item) => (
               <div className="request_item" key={item._id}>
                 <div className="request_item_top">
                   <img src={img} alt="merchant image" />

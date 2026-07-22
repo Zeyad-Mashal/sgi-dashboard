@@ -11,6 +11,7 @@
 .sidenav_container {
   width: 100%;
   padding: 10px;
+  padding-bottom: 70px;
 }
 .sidenav_container > img {
   margin-top: 1rem;
@@ -79,10 +80,21 @@
   justify-content: center;
   align-items: center;
   position: absolute;
-  bottom: 20px;
+  bottom: 12px;
   left: 10px;
   gap: 10px;
   cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .Logout > h3 {
+    bottom: 8px;
+    margin-top: 1.5rem;
+  }
+
+  .sidenav_container {
+    padding-bottom: 80px;
+  }
 }
 
 .logout-modal-overlay {
